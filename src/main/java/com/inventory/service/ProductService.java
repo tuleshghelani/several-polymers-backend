@@ -9,15 +9,16 @@ import com.inventory.repository.ProductRepository;
 import com.inventory.repository.CategoryRepository;
 import com.inventory.dao.ProductDao;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -26,11 +27,13 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductDao productDao;
     private final UtilityService utilityService;
+    private final ProductQuantityService productQuantityService;
+    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> create(ProductDto dto) {
         validateProduct(dto);
-        
+
         try {
             Optional<Product> productByName = productRepository.findByName(dto.getName().trim());
             if(!productByName.isEmpty()) {
@@ -41,12 +44,15 @@ public class ProductService {
             Product product = new Product();
             product.setName(dto.getName().trim());
             product.setCategory(categoryRepository.findById(dto.getCategoryId())
-                .orElseThrow(() -> new ValidationException("Category not found")));
+                    .orElseThrow(() -> new ValidationException("Category not found")));
             product.setDescription(dto.getDescription());
             product.setPurchaseAmount(dto.getPurchaseAmount() != null ? dto.getPurchaseAmount() : BigDecimal.valueOf(0));
             product.setSaleAmount(dto.getSaleAmount() != null ? dto.getSaleAmount() : BigDecimal.valueOf(0));
             product.setMinimumStock(dto.getMinimumStock());
             product.setStatus(dto.getStatus().trim());
+            product.setMeasurement(dto.getMeasurement().trim());
+            product.setRemainingQuantity(dto.getRemainingQuantity());
+            product.setWeight(dto.getWeight() != null ? dto.getWeight() : BigDecimal.valueOf(0));
             product.setClient(currentUser.getClient());
             product.setCreatedBy(currentUser);
 
@@ -59,32 +65,39 @@ public class ProductService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> update(Long id, ProductDto dto) {
         validateProduct(dto);
-        
+
         try {
             Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ValidationException("Product not found"));
-
-            Optional<Product> productByName = productRepository.findByNameAndIdNotIn(dto.getName().trim(), Collections.singletonList(product.getId()));
-            if(!productByName.isEmpty()) {
-                throw new ValidationException("Product name already exists");
-            }
+                    .orElseThrow(() -> new ValidationException("Product not found"));
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            if(product.getClient().getId() != currentUser.getClient().getId()) {
+            if (!Objects.equals(product.getClient().getId(), currentUser.getClient().getId())) {
                 throw new ValidationException("You are not authorized to update this product");
             }
-            
+
+            Optional<Product> productByName = productRepository.findByNameAndIdNotInAndClient_Id(
+                    dto.getName().trim(), Collections.singletonList(product.getId()), currentUser.getClient().getId());
+            if (productByName.isPresent()) {
+                throw new ValidationException("Product name already exists");
+            }
+
+            // Update basic product information
             product.setName(dto.getName().trim());
             product.setCategory(categoryRepository.findById(dto.getCategoryId())
-                .orElseThrow(() -> new ValidationException("Category not found")));
+                    .orElseThrow(() -> new ValidationException("Category not found")));
             product.setDescription(dto.getDescription());
             product.setPurchaseAmount(dto.getPurchaseAmount() != null ? dto.getPurchaseAmount() : BigDecimal.valueOf(0));
             product.setSaleAmount(dto.getSaleAmount() != null ? dto.getSaleAmount() : BigDecimal.valueOf(0));
             product.setMinimumStock(dto.getMinimumStock());
             product.setStatus(dto.getStatus().trim());
+            product.setMeasurement(dto.getMeasurement().trim());
+            product.setWeight(dto.getWeight() != null ? dto.getWeight() : BigDecimal.valueOf(0));
             product.setClient(currentUser.getClient());
+
+            // Handle quantity updates using the new method
+            dto.setTotalRemainingQuantity(product.getRemainingQuantity().subtract(product.getBlockedQuantity()));
 
             productRepository.save(product);
             return ApiResponse.success("Product updated successfully");
@@ -108,7 +121,7 @@ public class ProductService {
             throw new ValidationException("Failed to retrieve products");
         }
     }
-    
+
     public ApiResponse<Map<String, Object>> searchProducts(ProductDto productDto) {
         try {
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
@@ -125,18 +138,23 @@ public class ProductService {
     public ApiResponse<?> delete(Long id) {
         try {
             Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ValidationException("Product not found"));
+                    .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.UNPROCESSABLE_ENTITY));
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
             if(product.getClient().getId() != currentUser.getClient().getId()) {
-                throw new ValidationException("You are not authorized to delete this product");
+                throw new ValidationException("You are not authorized to delete this product", HttpStatus.UNPROCESSABLE_ENTITY);
             }
-            productRepository.delete(product);
-            return ApiResponse.success("Product deleted successfully");
+            try {
+                productRepository.delete(product);
+                return ApiResponse.success("Product deleted successfully");
+            } catch (DataIntegrityViolationException e) {
+                e.printStackTrace();
+                throw new ValidationException("Cannot delete product. There are purchase, sale, or quotation records associated with this product.", HttpStatus.UNPROCESSABLE_ENTITY);
+            }
         } catch (ValidationException e) {
             throw e;
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new ValidationException("Failed to delete product");
+            log.error("Error deleting product", e);
+            throw new ValidationException("Failed to delete product: " + e.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -170,4 +188,24 @@ public class ProductService {
         dto.setClientId(product.getClient().getId());
         return dto;
     }
+
+    /*public byte[] exportProductsPdf(ProductDto productDto) {
+        try {
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            productDto.setClientId(currentUser.getClient().getId());
+
+            // Remove pagination
+            productDto.setPage(0);
+            productDto.setSize(Integer.MAX_VALUE);
+
+            Map<String, Object> result = productDao.searchProducts(productDto);
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> products = (List<Map<String, Object>>) result.get("content");
+
+            return productPdfService.generateProductListPdf(products);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ValidationException("Failed to export products to PDF: " + e.getMessage());
+        }
+    }*/
 }

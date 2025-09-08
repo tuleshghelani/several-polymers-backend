@@ -20,9 +20,12 @@ public class ProductDto {
     private BigDecimal purchaseAmount;
     private BigDecimal saleAmount;
     private BigDecimal minimumStock;
-    private BigDecimal taxPercentage;
     private String status;
+    private String measurement;
+    private BigDecimal weight;
     private BigDecimal remainingQuantity;
+    private BigDecimal blockedQuantity;
+    private BigDecimal totalRemainingQuantity;
     private Long clientId;
     private Integer page = 0;
     private Integer size = 10;
