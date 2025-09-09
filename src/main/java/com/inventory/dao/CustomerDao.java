@@ -47,7 +47,7 @@ public class CustomerDao {
             SELECT 
                 c.id, c.name, c.gst, c.address, c.mobile,
                 c.remaining_payment_amount, c.next_action_date,
-                c.email, c.remarks, c.status, c.coating_unit_price,
+                c.email, c.remarks, c.status,
                 c.created_at, c.updated_at
             FROM customer c
             WHERE c.client_id = :clientId
@@ -93,9 +93,8 @@ public class CustomerDao {
             customer.put("email", row[7]);
             customer.put("remarks", row[8]);
             customer.put("status", row[9]);
-            customer.put("coatingUnitPrice", row[10]);
-            customer.put("createdAt", row[11]);
-            customer.put("updatedAt", row[12]);
+            customer.put("createdAt", row[10]);
+            customer.put("updatedAt", row[11]);
             customers.add(customer);
         }
 

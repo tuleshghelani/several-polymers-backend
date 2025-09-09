@@ -22,7 +22,6 @@ public class CustomerDto {
     private String address;
     private String mobile;
     private BigDecimal remainingPaymentAmount;
-    private BigDecimal coatingUnitPrice;
 
     @JsonDeserialize(using = CustomDateDeserializer.class)
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss", timezone = "IST")

@@ -1,6 +1,8 @@
 package com.inventory.entity;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +23,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
 @Data
 @Entity
@@ -75,6 +78,10 @@ public class UserMaster {
     
     @Column(name = "lock_time")
     private OffsetDateTime lockTime;
+
+    @Column(name = "roles", columnDefinition = "jsonb default '[]'")
+    @Type(value = com.vladmihalcea.hibernate.type.json.JsonType.class)
+    private List<String> roles = new ArrayList<>();
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_user_master_client_id_client_id"))

@@ -1,6 +1,5 @@
 package com.inventory.controller;
 
-import com.inventory.dto.CoatingPriceDto;
 import com.inventory.dto.CustomerDto;
 import com.inventory.service.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -44,8 +43,5 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.getCustomer(request.getId()));
     }
 
-    @PostMapping("/coating-price")
-    public ResponseEntity<?> getCoatingPrice(@RequestBody CoatingPriceDto request) {
-        return ResponseEntity.ok(customerService.getCoatingPrice(request));
-    }
+    
 } 

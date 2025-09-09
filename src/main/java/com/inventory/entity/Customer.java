@@ -35,9 +35,6 @@ public class Customer {
     
     @Column(name = "mobile", length = 15)
     private String mobile;
-
-    @Column(name = "coating_unit_price", precision = 10, scale = 2)
-    private BigDecimal coatingUnitPrice;
     
     @Column(name = "remaining_payment_amount", precision = 10, scale = 2)
     private BigDecimal remainingPaymentAmount;

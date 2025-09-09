@@ -28,7 +28,9 @@ public class ProductDao {
                 p.name,
                 p.purchase_amount,
                 p.sale_amount,
-                p.tax_percentage
+                p.tax_percentage,
+                p.weight,
+                p.measurement
             FROM product p
             WHERE 1=1
         """);
@@ -68,13 +70,14 @@ public class ProductDao {
         
         for (Object[] row : results) {
             if (row[0] != null) {
-                Map<String, Object> product = new HashMap<>(10);
+                Map<String, Object> product = new HashMap<>(12);
                 product.put("id", row[0]);
                 product.put("name", row[1]);
                 product.put("purchase_amount", row[2]);
                 product.put("sale_amount", row[3]);
                 product.put("tax_percentage", row[4]);
-
+                product.put("weight", row[5]);
+                product.put("measurement", row[6]);
                 products.add(product);
             }
         }
@@ -116,7 +119,12 @@ public class ProductDao {
                 c.id as category_id,
                 c.name as category_name,
                 p.purchase_amount,
-                p.sale_amount
+                p.sale_amount,
+                p.tax_percentage,
+                p.weight,
+                p.measurement,
+                p.created_at,
+                p.updated_at
             FROM product p
             LEFT JOIN category c ON p.category_id = c.id
             WHERE 1=1
@@ -182,6 +190,11 @@ public class ProductDao {
                 product.put("categoryName", row[7]);
                 product.put("purchaseAmount", row[8]);
                 product.put("saleAmount", row[9]);
+                product.put("taxPercentage", row[10]);
+                product.put("weight", row[11]);
+                product.put("measurement", row[12]);
+                product.put("createdAt", row[13]);
+                product.put("updatedAt", row[14]);
                 products.add(product);
             }
         }

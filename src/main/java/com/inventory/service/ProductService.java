@@ -51,6 +51,7 @@ public class ProductService {
             product.setMinimumStock(dto.getMinimumStock());
             product.setStatus(dto.getStatus().trim());
             product.setMeasurement(dto.getMeasurement().trim());
+            product.setTaxPercentage(dto.getTaxPercentage() != null ? dto.getTaxPercentage() : BigDecimal.valueOf(18));
             product.setRemainingQuantity(dto.getRemainingQuantity());
             product.setWeight(dto.getWeight() != null ? dto.getWeight() : BigDecimal.valueOf(0));
             product.setClient(currentUser.getClient());
@@ -93,6 +94,8 @@ public class ProductService {
             product.setMinimumStock(dto.getMinimumStock());
             product.setStatus(dto.getStatus().trim());
             product.setMeasurement(dto.getMeasurement().trim());
+            product.setTaxPercentage(dto.getTaxPercentage() != null ? dto.getTaxPercentage() : BigDecimal.valueOf(18));
+            product.setRemainingQuantity(dto.getRemainingQuantity());
             product.setWeight(dto.getWeight() != null ? dto.getWeight() : BigDecimal.valueOf(0));
             product.setClient(currentUser.getClient());
 
@@ -185,6 +188,9 @@ public class ProductService {
         dto.setMinimumStock(product.getMinimumStock());
         dto.setStatus(product.getStatus());
         dto.setRemainingQuantity(product.getRemainingQuantity());
+        dto.setTaxPercentage(product.getTaxPercentage());
+        dto.setWeight(product.getWeight());
+        dto.setMeasurement(product.getMeasurement());
         dto.setClientId(product.getClient().getId());
         return dto;
     }

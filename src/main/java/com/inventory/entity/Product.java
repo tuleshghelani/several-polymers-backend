@@ -76,6 +76,9 @@ public class Product {
     @Column(name = "minimum_stock", precision = 19, scale = 2)
     private BigDecimal minimumStock;
 
+    @Column(name = "tax_percentage", nullable = false, precision = 5, scale = 2, columnDefinition = "numeric(5,2) DEFAULT 18 ")
+    private BigDecimal taxPercentage = BigDecimal.valueOf(18);
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_product_client_id_client_id"))
     private Client client;

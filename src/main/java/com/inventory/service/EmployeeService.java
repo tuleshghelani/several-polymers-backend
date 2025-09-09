@@ -167,8 +167,11 @@ public class EmployeeService {
             throw new ValidationException("Regular pay must be greater than 0");
         }
 
-        if (dto.getOvertimePay() == null || dto.getOvertimePay().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ValidationException("Overtime pay must be greater than 0");
+        // Overtime pay is required only when wage type is not FIXED
+        if (!"FIXED".equalsIgnoreCase(dto.getWageType())) {
+            if (dto.getOvertimePay() == null || dto.getOvertimePay().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ValidationException("Overtime pay must be greater than 0");
+            }
         }
 
         if (dto.getStartTime() == null || dto.getStartTime().isAfter(LocalTime.of(23, 59, 59))) {

@@ -1,7 +1,6 @@
 package com.inventory.service;
 
 import com.inventory.dto.ApiResponse;
-import com.inventory.dto.CoatingPriceDto;
 import com.inventory.dto.CustomerDto;
 import com.inventory.entity.Customer;
 import com.inventory.entity.UserMaster;
@@ -16,7 +15,6 @@ import org.springframework.util.StringUtils;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -141,30 +139,7 @@ public class CustomerService {
         }
     }
 
-    public ApiResponse<?> getCoatingPrice(CoatingPriceDto dto) {
-        try {
-            if (dto.getId() == null) {
-                throw new ValidationException("Customer ID is required");
-            }
-            
-            Customer customer = customerRepository.findById(dto.getId())
-                .orElseThrow(() -> new ValidationException("Customer not found"));
-            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            if(customer.getClient().getId() != currentUser.getClient().getId()) {
-                throw new ValidationException("You are not authorized to view this customer");
-            }
-
-            CoatingPriceDto response = new CoatingPriceDto();
-            response.setId(customer.getId());
-            response.setCoatingUnitPrice(customer.getCoatingUnitPrice());
-            
-            return ApiResponse.success("Coating price retrieved successfully", response);
-        } catch (ValidationException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ValidationException("Failed to retrieve coating price: " + e.getMessage());
-        }
-    }
+    
 
     private void validateCustomer(CustomerDto dto) {
         if (!StringUtils.hasText(dto.getName())) {
@@ -186,7 +161,6 @@ public class CustomerService {
         customer.setAddress(dto.getAddress());
         customer.setMobile(dto.getMobile().trim());
         customer.setRemainingPaymentAmount(dto.getRemainingPaymentAmount());
-        customer.setCoatingUnitPrice(dto.getCoatingUnitPrice());
         customer.setNextActionDate(dto.getNextActionDate());
         customer.setEmail(dto.getEmail());
         customer.setRemarks(dto.getRemarks());
@@ -201,7 +175,6 @@ public class CustomerService {
         dto.setAddress(customer.getAddress());
         dto.setMobile(customer.getMobile());
         dto.setRemainingPaymentAmount(customer.getRemainingPaymentAmount());
-        dto.setCoatingUnitPrice(customer.getCoatingUnitPrice());
         dto.setNextActionDate(customer.getNextActionDate());
         dto.setEmail(customer.getEmail());
         dto.setRemarks(customer.getRemarks());
