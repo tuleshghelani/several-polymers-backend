@@ -41,7 +41,7 @@ public class SaleDto {
     private BigDecimal otherExpenses;
     private Integer currentPage;
     private Integer perPageRecord;
-    private String coilNumber;
+//    private String coilNumber;
     private BigDecimal discount;
     private BigDecimal discountAmount;
     private BigDecimal discountPrice;

@@ -20,7 +20,7 @@ public class SaleItemDto {
     private BigDecimal finalPrice;
     private Long clientId;
     private String remarks;
-    private String coilNumber;
+//    private String coilNumber;
 
 
 } 

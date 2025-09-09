@@ -100,7 +100,7 @@ public class ProductService {
             product.setClient(currentUser.getClient());
 
             // Handle quantity updates using the new method
-            dto.setTotalRemainingQuantity(product.getRemainingQuantity().subtract(product.getBlockedQuantity()));
+//            dto.setTotalRemainingQuantity(product.getRemainingQuantity().subtract(product.getBlockedQuantity()));
 
             productRepository.save(product);
             return ApiResponse.success("Product updated successfully");

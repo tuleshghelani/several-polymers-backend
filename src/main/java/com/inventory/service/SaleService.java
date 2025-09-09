@@ -67,18 +67,11 @@ public class SaleService {
             List<SaleItem> items = new ArrayList<>();
             BigDecimal totalAmount = BigDecimal.ZERO;
 
-            List<String> coilNumbers = new ArrayList<>();
-            
             for (SaleItemDto itemDto : request.getProducts()) {
                 SaleItem item = createSaleItem(itemDto, sale);
                 items.add(item);
                 saleItemRepository.save(item);
                 totalAmount = totalAmount.add(item.getFinalPrice());
-                if (item.getCoilNumber() != null && !item.getCoilNumber().isEmpty()) {
-                    // Escape any special characters including commas
-                    String escapedcoilNumber = item.getCoilNumber().replace(",", "\\,");
-                    coilNumbers.add(escapedcoilNumber);
-                }
     //            productQuantityService.updateProductQuantity(
     //                    item.getProduct().getId(),
     //                    item.getQuantity(),
@@ -89,7 +82,6 @@ public class SaleService {
             // Round the total amount
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             sale.setTotalSaleAmount(totalAmount);
-            sale.setCoilNumbers(coilNumbers);
             sale = saleRepository.save(sale);
             
             // Process items and update product quantities in batches
@@ -114,9 +106,6 @@ public class SaleService {
         item.setSale(sale);
         item.setQuantity(dto.getQuantity());
         item.setRemarks(dto.getRemarks());
-        if (dto.getCoilNumber() != null && !dto.getCoilNumber().isEmpty()) {
-            item.setCoilNumber(dto.getCoilNumber().toLowerCase());
-        }
         item.setUnitPrice(dto.getUnitPrice().setScale(2, RoundingMode.HALF_UP));
 //        item.setDiscountPercentage(dto.getDiscountPercentage());
         
@@ -247,12 +236,9 @@ public class SaleService {
         // Reverse existing quantities
         List<SaleItem> existingItems = saleItemRepository.findBySaleId(request.getId());
         for (SaleItem item : existingItems) {
-            productQuantityService.updateProductQuantity(
+            productQuantityService.reverseSaleQuantity(
                 item.getProduct().getId(),
-                item.getQuantity(),
-                true,  // not a purchase
-                false,   // is a purchase (reverse)
-                null    // no blocking
+                item.getQuantity()
             );
         }
         

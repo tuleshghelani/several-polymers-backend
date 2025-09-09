@@ -2,13 +2,12 @@ package com.inventory.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Type;
+ 
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+ 
 
 @Data
 @Entity
@@ -43,10 +42,6 @@ public class Sale {
 
     @Column(name = "number_of_items")
     private Integer numberOfItems;
-
-    @Column(name = "coil_numbers", columnDefinition = "jsonb default '[]'")
-    @Type(value = com.vladmihalcea.hibernate.type.json.JsonType.class)
-    private List<String> coilNumbers = new ArrayList<>();
 
     @Column(name = "is_black", columnDefinition = "bool default false")
     private Boolean isBlack = false;

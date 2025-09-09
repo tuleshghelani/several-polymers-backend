@@ -66,18 +66,11 @@ public class PurchaseService {
             List<PurchaseItem> items = new ArrayList<>();
             BigDecimal totalAmount = BigDecimal.ZERO;
 
-            List<String> coilNumbers = new ArrayList<>();
-            
             for (PurchaseItemDto itemDto : request.getProducts()) {
                 PurchaseItem item = createPurchaseItem(itemDto, purchase);
                 items.add(item);
                 purchaseItemRepository.save(item);
                 totalAmount = totalAmount.add(item.getFinalPrice());
-                if (item.getCoilNumber() != null && !item.getCoilNumber().isEmpty()) {
-                    // Escape any special characters including commas
-                    String escapedcoilNumber = item.getCoilNumber().replace(",", "\\,");
-                    coilNumbers.add(escapedcoilNumber);
-                }
     //            productQuantityService.updateProductQuantity(
     //                    item.getProduct().getId(),
     //                    item.getQuantity(),
@@ -88,7 +81,6 @@ public class PurchaseService {
             // Round the total amount
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             purchase.setTotalPurchaseAmount(totalAmount);
-            purchase.setCoilNumbers(coilNumbers);
             purchase = purchaseRepository.save(purchase);
             
             // Process items and update product quantities in batches
@@ -113,9 +105,6 @@ public class PurchaseService {
         item.setPurchase(purchase);
         item.setQuantity(dto.getQuantity());
         item.setRemarks(dto.getRemarks());
-        if (dto.getCoilNumber() != null && !dto.getCoilNumber().isEmpty()) {
-            item.setCoilNumber(dto.getCoilNumber().toLowerCase());
-        }
         item.setUnitPrice(dto.getUnitPrice().setScale(2, RoundingMode.HALF_UP));
 //        item.setDiscountPercentage(dto.getDiscountPercentage());
         
@@ -197,12 +186,9 @@ public class PurchaseService {
 
             for (PurchaseItem item : items) {
                 try {
-                    productQuantityService.updateProductQuantity(
+                    productQuantityService.reversePurchaseQuantity(
                             item.getProduct().getId(),
-                            item.getQuantity(),
-                            false,  // false to subtract the quantity,
-                            true,
-                            null
+                            item.getQuantity()
                     );
                 } catch (Exception e) {
                     log.error("Error reversing quantity for product {}: {}",
@@ -243,15 +229,12 @@ public class PurchaseService {
             throw new ValidationException("Unauthorized access to purchase");
         }
         
-        // Reverse existing quantities
+        // Reverse existing quantities without enforcing sale stock constraint
         List<PurchaseItem> existingItems = purchaseItemRepository.findByPurchaseId(request.getId());
         for (PurchaseItem item : existingItems) {
-            productQuantityService.updateProductQuantity(
+            productQuantityService.reversePurchaseQuantity(
                 item.getProduct().getId(),
-                item.getQuantity(),
-                false,  // not a purchase
-                true,   // is a sale (reverse)
-                null    // no blocking
+                item.getQuantity()
             );
         }
         

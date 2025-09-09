@@ -64,11 +64,11 @@ public class Product {
     @Column(name = "remaining_quantity", columnDefinition = "numeric(15,3) ")
     private BigDecimal remainingQuantity = BigDecimal.ZERO;
 
-    @Column(name = "blocked_quantity", columnDefinition = "numeric(15,3) ")
-    private BigDecimal blockedQuantity = BigDecimal.ZERO;
-
-    @Column(name = "total_remaining_quantity", columnDefinition = "numeric(15,3) ")
-    private BigDecimal totalRemainingQuantity = BigDecimal.ZERO;
+//    @Column(name = "blocked_quantity", columnDefinition = "numeric(15,3) ")
+//    private BigDecimal blockedQuantity = BigDecimal.ZERO;
+//
+//    @Column(name = "total_remaining_quantity", columnDefinition = "numeric(15,3) ")
+//    private BigDecimal totalRemainingQuantity = BigDecimal.ZERO;
 
     @Column(name = "description")
     private String description;

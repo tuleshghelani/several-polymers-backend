@@ -2,11 +2,8 @@ package com.inventory.entity;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,14 +14,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Type;
+ 
 
 @Data
 @Entity
@@ -59,10 +55,6 @@ public class Purchase {
 
     @Column(name = "number_of_items")
     private Integer numberOfItems;
-
-    @Column(name = "coil_numbers", columnDefinition = "jsonb default '[]'")
-    @Type(value = com.vladmihalcea.hibernate.type.json.JsonType.class)
-    private List<String> coilNumbers = new ArrayList<>();
     
     @Column(length = 29, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();

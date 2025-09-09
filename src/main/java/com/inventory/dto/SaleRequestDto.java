@@ -22,6 +22,5 @@ public class SaleRequestDto {
     private Date saleDate;
     private String invoiceNumber;
     private List<SaleItemDto> products;
-    private List<String> coilNumbers;
     private Boolean isBlack;
 }

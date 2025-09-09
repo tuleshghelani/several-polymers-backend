@@ -86,28 +86,13 @@ public class SaleDao {
                 """);
             params.put("endDate", dto.getEndDate());
         }
-        if(!Objects.isNull(dto.getCoilNumber()) && !dto.getCoilNumber().isEmpty()) {
-            sql.append("""
-                AND s.coil_numbers @> CAST(:coilNumber AS jsonb)
-                """);
-            params.put("coilNumber", "[\"" + dto.getCoilNumber().trim().toLowerCase() + "\"]");
-        }
+        
         if(!Objects.isNull(dto.getCustomerId())) {
             sql.append("""
                 AND s.customer_id = :customerId
                 """);
             params.put("customerId", dto.getCustomerId());
         }
-
-        // if(!Objects.isNull(dto.getcoilNumber()) && !dto.getcoilNumber().isEmpty()) {
-        //     sql.append("""
-        //         AND EXISTS (
-        //             SELECT FROM jsonb_array_elements_text(s.coil_numbers)
-        //             WHERE value LIKE :coilNumber
-        //         )
-        //         """);
-        //     params.put("coilNumber", "%" + dto.getcoilNumber() + "%");
-        // }
     }
 
     private void setQueryParameters(Query query, Query countQuery, Map<String, Object> params, SaleDto dto) {
@@ -143,7 +128,7 @@ public class SaleDao {
                 s.created_at, s.updated_at, s.customer_id, s.created_by, s.is_black,
                 si.id as item_id, si.quantity, si.unit_price, si.discount_percentage,
                 si.discount_amount, si.final_price, 
-                si.product_id, si.coil_number, si.remarks
+                si.product_id, si.remarks
             FROM (SELECT * FROM sale WHERE id = :saleId AND client_id = :clientId) s
             LEFT JOIN (SELECT * FROM sale_items si WHERE sale_id = :saleId) si ON s.id = si.sale_id
             WHERE s.id = :saleId
@@ -188,8 +173,7 @@ public class SaleDao {
                     "discountAmount", row[13] != null ? row[13] : BigDecimal.ZERO,
                     "finalPrice", row[14] != null ? row[14] : BigDecimal.ZERO,
                     "productId", row[15],
-                    "coilNumber", row[16] != null ? row[16] : "",
-                    "remarks", row[17] != null ? row[17] : ""
+                    "remarks", row[16] != null ? row[16] : ""
                 ));
             }
         }

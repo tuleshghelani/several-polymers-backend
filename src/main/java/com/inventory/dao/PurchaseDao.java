@@ -87,12 +87,6 @@ public class PurchaseDao {
                 """);
             params.put("endDate", dto.getEndDate());
         }
-        if(!Objects.isNull(dto.getCoilNumber()) && !dto.getCoilNumber().isEmpty()) {
-            sql.append("""
-                AND p.coil_numbers @> CAST(:coilNumber AS jsonb)
-                """);
-            params.put("coilNumber", "[\"" + dto.getCoilNumber().trim().toLowerCase() + "\"]");
-        }
         if(!Objects.isNull(dto.getCustomerId())) {
             sql.append("""
                 AND p.customer_id = :customerId
@@ -100,15 +94,7 @@ public class PurchaseDao {
             params.put("customerId", dto.getCustomerId());
         }
 
-        // if(!Objects.isNull(dto.getcoilNumber()) && !dto.getcoilNumber().isEmpty()) {
-        //     sql.append("""
-        //         AND EXISTS (
-        //             SELECT FROM jsonb_array_elements_text(p.coil_numbers)
-        //             WHERE value LIKE :coilNumber
-        //         )
-        //         """);
-        //     params.put("coilNumber", "%" + dto.getcoilNumber() + "%");
-        // }
+        
     }
 
     private void setQueryParameters(Query query, Query countQuery, Map<String, Object> params, PurchaseDto dto) {
@@ -181,7 +167,7 @@ public class PurchaseDao {
                 p.created_at, p.updated_at, p.customer_id, p.created_by,
                 pi.id as item_id, pi.quantity, pi.unit_price, pi.discount_percentage,
                 pi.discount_amount, pi.final_price, 
-                pi.product_id, pi.coil_number, pi.remarks
+                pi.product_id, pi.remarks
             FROM (SELECT * FROM purchase WHERE id = :purchaseId AND client_id = :clientId) p
             LEFT JOIN (SELECT * FROM purchase_items WHERE purchase_id = :purchaseId) pi ON p.id = pi.purchase_id
             WHERE p.id = :purchaseId
@@ -225,8 +211,7 @@ public class PurchaseDao {
                     "discountAmount", row[12] != null ? row[12] : BigDecimal.ZERO,
                     "finalPrice", row[13] != null ? row[13] : BigDecimal.ZERO,
                     "productId", row[14],
-                    "coilNumber", row[15] != null ? row[15] : "",
-                    "remarks", row[16] != null ? row[16] : ""
+                    "remarks", row[15] != null ? row[15] : ""
                 ));
             }
         }

@@ -50,6 +50,47 @@ public class ProductQuantityService {
         }
     }
     
+    @Transactional
+    public void reversePurchaseQuantity(Long productId, BigDecimal quantityToReverse) {
+        Lock lock = getProductLock(productId);
+        lock.lock();
+        try {
+            Product product = getAndValidateProduct(productId);
+            BigDecimal newRemainingQuantity = product.getRemainingQuantity().subtract(quantityToReverse);
+            product.setRemainingQuantity(newRemainingQuantity);
+            productRepository.save(product);
+            log.info("Product {} reverse purchase applied. Reversed: {}, Remaining: {}",
+                product.getId(), quantityToReverse, product.getRemainingQuantity());
+        } catch (Exception e) {
+            log.error("Error reversing purchase quantity: {}", e.getMessage(), e);
+            throw e;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    
+    
+    @Transactional
+    public void reverseSaleQuantity(Long productId, BigDecimal quantityToReverse) {
+        Lock lock = getProductLock(productId);
+        lock.lock();
+        try {
+            Product product = getAndValidateProduct(productId);
+            BigDecimal newRemainingQuantity = product.getRemainingQuantity().add(quantityToReverse);
+            product.setRemainingQuantity(newRemainingQuantity);
+            productRepository.save(product);
+            log.info("Product {} reverse sale applied. Reversed: {}, Remaining: {}",
+                product.getId(), quantityToReverse, product.getRemainingQuantity());
+        } catch (Exception e) {
+            log.error("Error reversing sale quantity: {}", e.getMessage(), e);
+            throw e;
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    
     private Product getAndValidateProduct(Long productId) {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new ValidationException("Product not found"));
