@@ -29,7 +29,7 @@ import com.inventory.repository.QuotationItemRepository;
 import com.inventory.repository.QuotationRepository;
 import com.inventory.repository.PurchaseRepository;
 import com.inventory.repository.SaleRepository;
-import com.inventory.repository.DailyProfitRepository;
+ 
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +64,7 @@ public class QuotationService {
     private final QuotationPdfGenerationService quotationPdfGenerationService;
     private final PurchaseRepository purchaseRepository;
     private final SaleRepository saleRepository;
-    private final DailyProfitRepository dailyProfitRepository;
+    
 //    private final ProductQuantityService productQuantityService;
 //    private final QuotationItemCalculationRepository quotationItemCalculationRepository;
 //    private final DispatchSlipPdfService dispatchSlipPdfService;
@@ -607,14 +607,11 @@ public class QuotationService {
 //
 //            sale = saleRepository.save(sale);
 //
-//            // Create daily profit entry
-//            createDailyProfit(purchase, sale, currentUser);
+//            
 //        }
 //    }
 //
-//    private void createDailyProfit(Purchase purchase, Sale sale, UserMaster currentUser) {
-//        DailyProfit dailyProfit = new DailyProfit();
-//        dailyProfit.setSale(sale);
+//    
 //
 //        // Use discounted prices for profit calculations (including quotation discount)
 //        BigDecimal purchaseAmount = purchase.getDiscountPrice();

@@ -33,7 +33,7 @@ public class TransportService {
     private final ObjectMapper objectMapper;
     private final PurchaseRepository purchaseRepository;
     private final SaleRepository saleRepository;
-    private final DailyProfitRepository dailyProfitRepository;
+    
     private final TransportItemRepository transportItemRepository;
 
     @Transactional(rollbackFor = Exception.class)
@@ -296,8 +296,7 @@ public class TransportService {
         sale.setClient(currentUser.getClient());
         sale = saleRepository.save(sale);
         
-        // Create daily profit
-        createDailyProfit(purchase, sale, currentUser);
+        
     }
 
     private void calculatePurchaseAmounts(Purchase purchase, TransportDto.BagItemDto item) {
