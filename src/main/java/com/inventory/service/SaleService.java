@@ -5,6 +5,7 @@ import com.inventory.dto.ApiResponse;
 import com.inventory.dto.SaleDto;
 import com.inventory.dto.SaleItemDto;
 import com.inventory.dto.SaleRequestDto;
+import com.inventory.entity.Customer;
 import com.inventory.entity.Product;
 import com.inventory.entity.Sale;
 import com.inventory.entity.SaleItem;
@@ -34,6 +35,7 @@ public class SaleService {
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
     private final ProductQuantityService productQuantityService;
+    private final CustomerRemainingPaymentAmountService customerRemainingPaymentAmountService;
     private final CustomerRepository customerRepository;
     private final BatchProcessingService batchProcessingService;
     private final UtilityService utilityService;
@@ -85,6 +87,14 @@ public class SaleService {
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             sale.setTotalSaleAmount(totalAmount);
             sale = saleRepository.save(sale);
+            
+            // Update customer remaining payment amount (add sale amount)
+            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                sale.getCustomer().getId(), 
+                totalAmount, 
+                false,  // isPurchase
+                true   // isSale
+            );
             
             // Process items and update product quantities in batches
         //    batchProcessingService.processSaleItems(items);
@@ -203,6 +213,12 @@ public class SaleService {
                 }
             }
 
+            // Reverse customer remaining payment amount (subtract sale amount)
+            customerRemainingPaymentAmountService.reverseSalePaymentAmount(
+                sale.getCustomer().getId(), 
+                sale.getTotalSaleAmount()
+            );
+
             saleItemRepository.deleteBySaleId(id);
             saleRepository.delete(sale);
             
@@ -235,6 +251,10 @@ public class SaleService {
             throw new ValidationException("Unauthorized access to sale");
         }
         
+        // Store original customer and amount for payment adjustment
+        Customer originalCustomer = existingSale.getCustomer();
+        BigDecimal originalAmount = existingSale.getTotalSaleAmount();
+        
         // Reverse existing quantities
         List<SaleItem> existingItems = saleItemRepository.findBySaleId(request.getId());
         for (SaleItem item : existingItems) {
@@ -250,9 +270,12 @@ public class SaleService {
         // Delete existing items
         saleItemRepository.deleteBySaleId(request.getId());
         
+        // Get new customer
+        Customer newCustomer = customerRepository.findById(request.getCustomerId())
+            .orElseThrow(() -> new ValidationException("Customer not found"));
+        
         // Update sale details
-        existingSale.setCustomer(customerRepository.findById(request.getCustomerId())
-            .orElseThrow(() -> new ValidationException("Customer not found")));
+        existingSale.setCustomer(newCustomer);
         existingSale.setSaleDate(request.getSaleDate());
         existingSale.setInvoiceNumber(request.getInvoiceNumber());
         existingSale.setNumberOfItems(request.getProducts().size());
@@ -283,9 +306,44 @@ public class SaleService {
         existingSale.setTotalSaleAmount(totalAmount);
         saleRepository.save(existingSale);
         
+        // Handle customer payment amount changes
+        handleCustomerPaymentAmountUpdate(originalCustomer, newCustomer, originalAmount, totalAmount);
+        
         // Process items and update product quantities in batches
 //        batchProcessingService.processSaleItems(newItems);
         
         return ApiResponse.success("Sale updated successfully");
+    }
+    
+    private void handleCustomerPaymentAmountUpdate(Customer originalCustomer, Customer newCustomer, BigDecimal originalAmount, BigDecimal newAmount) {
+        // If customer changed, adjust payment amounts
+        if (!originalCustomer.getId().equals(newCustomer.getId())) {
+            // Reduce original customer's remaining payment amount (reverse sale)
+            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                originalCustomer.getId(), 
+                originalAmount,
+                true,  // isPurchase (reversing sale)
+                false  // not a sale (reversing)
+            );
+            
+            // Increase new customer's remaining payment amount (new sale)
+            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                newCustomer.getId(), 
+                newAmount,
+                false, // not a purchase
+                true   // is a sale
+            );
+        } else {
+            // Same customer, adjust by the difference
+            BigDecimal amountDifference = newAmount.subtract(originalAmount);
+            if (amountDifference.compareTo(BigDecimal.ZERO) != 0) {
+                customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                    newCustomer.getId(), 
+                    amountDifference,
+                    amountDifference.compareTo(BigDecimal.ZERO) < 0, // isPurchase if negative (reducing sale)
+                    amountDifference.compareTo(BigDecimal.ZERO) > 0  // isSale if positive (increasing sale)
+                );
+            }
+        }
     }
 }

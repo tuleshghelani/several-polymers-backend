@@ -5,6 +5,7 @@ import com.inventory.dto.ApiResponse;
 import com.inventory.dto.PurchaseDto;
 import com.inventory.dto.PurchaseItemDto;
 import com.inventory.dto.PurchaseRequestDto;
+import com.inventory.entity.Customer;
 import com.inventory.entity.Product;
 import com.inventory.entity.Purchase;
 import com.inventory.entity.PurchaseItem;
@@ -39,6 +40,7 @@ public class PurchaseService {
     private final UtilityService utilityService;
     private final PurchaseDao purchaseDao;
     private final PurchaseItemRepository purchaseItemRepository;
+    private final CustomerRemainingPaymentAmountService customerRemainingPaymentAmountService;
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> createPurchase(PurchaseRequestDto request) {
@@ -71,12 +73,23 @@ public class PurchaseService {
                 items.add(item);
                 purchaseItemRepository.save(item);
                 totalAmount = totalAmount.add(item.getFinalPrice());
-    //            productQuantityService.updateProductQuantity(
-    //                    item.getProduct().getId(),
-    //                    item.getQuantity(),
-    //                    true
-    //            );
+               productQuantityService.updateProductQuantity(
+                       item.getProduct().getId(),
+                       item.getQuantity(),
+                       true,
+                       false,
+                       null
+               );
             }
+
+            
+            // Update customer remaining payment amount (add sale amount)
+            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                purchase.getCustomer().getId(), 
+                totalAmount, 
+                true,  // isPurchase
+                false   // isSale
+            );
             
             // Round the total amount
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
@@ -84,7 +97,7 @@ public class PurchaseService {
             purchase = purchaseRepository.save(purchase);
             
             // Process items and update product quantities in batches
-            batchProcessingService.processPurchaseItems(items);
+            // batchProcessingService.processPurchaseItems(items);
             
             return ApiResponse.success("Purchase created successfully");
         } catch(ValidationException ve) {
@@ -232,24 +245,31 @@ public class PurchaseService {
             throw new ValidationException("Unauthorized access to purchase");
         }
         
-        // Reverse existing quantities without enforcing sale stock constraint
+        // Store original customer and amount for payment adjustment
+        var originalCustomer = existingPurchase.getCustomer();
+        var originalAmount = existingPurchase.getTotalPurchaseAmount();
+        
+        // Reverse existing quantities
         List<PurchaseItem> existingItems = purchaseItemRepository.findByPurchaseId(request.getId());
         for (PurchaseItem item : existingItems) {
             productQuantityService.updateProductQuantity(
                 item.getProduct().getId(),
                 item.getQuantity(),
-                false,  // false to subtract the quantity,
-                true,
-                null
+                false,  // not a purchase
+                true,   // is a sale (reverse)
+                null    // no blocking
             );
         }
         
         // Delete existing items
         purchaseItemRepository.deleteByPurchaseId(request.getId());
         
+        // Get new customer
+        var newCustomer = customerRepository.findById(request.getCustomerId())
+            .orElseThrow(() -> new ValidationException("Customer not found"));
+        
         // Update purchase details
-        existingPurchase.setCustomer(customerRepository.findById(request.getCustomerId())
-            .orElseThrow(() -> new ValidationException("Customer not found")));
+        existingPurchase.setCustomer(newCustomer);
         existingPurchase.setPurchaseDate(request.getPurchaseDate());
         existingPurchase.setInvoiceNumber(request.getInvoiceNumber());
         existingPurchase.setNumberOfItems(request.getProducts().size());
@@ -283,6 +303,41 @@ public class PurchaseService {
         // Process items and update product quantities in batches
 //        batchProcessingService.processPurchaseItems(newItems);
         
+        // Handle customer payment amount changes
+        handleCustomerPaymentAmountUpdate(originalCustomer, newCustomer, originalAmount, totalAmount);
+        
         return ApiResponse.success("Purchase updated successfully");
+    }
+    
+    private void handleCustomerPaymentAmountUpdate(Customer originalCustomer, Customer newCustomer, BigDecimal originalAmount, BigDecimal newAmount) {
+        // If customer changed, adjust payment amounts
+        if (!originalCustomer.getId().equals(newCustomer.getId())) {
+            // Reduce original customer's remaining payment amount (reverse purchase)
+            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                originalCustomer.getId(), 
+                originalAmount,
+                false, // not a purchase (reversing)
+                true   // is a sale (reversing)
+            );
+            
+            // Increase new customer's remaining payment amount (new purchase)
+            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                newCustomer.getId(), 
+                newAmount,
+                true,  // is a purchase
+                false  // not a sale
+            );
+        } else {
+            // Same customer, adjust by the difference
+            BigDecimal amountDifference = newAmount.subtract(originalAmount);
+            if (amountDifference.compareTo(BigDecimal.ZERO) != 0) {
+                customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                    newCustomer.getId(), 
+                    amountDifference,
+                    amountDifference.compareTo(BigDecimal.ZERO) > 0, // isPurchase if positive
+                    amountDifference.compareTo(BigDecimal.ZERO) < 0  // isSale if negative
+                );
+            }
+        }
     }
 }
