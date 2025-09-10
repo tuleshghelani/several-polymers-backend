@@ -27,6 +27,9 @@ public class QuotationRequestDto {
     private String contactNumber;
     private String address;
     private BigDecimal quotationDiscountPercentage;
+    private Long transportMasterId;
+    private String caseNumber;
+    private BigDecimal packagingAndForwadingCharges;
 
 
     @JsonFormat(pattern = "yyyy-MM-dd")

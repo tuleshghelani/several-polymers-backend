@@ -24,6 +24,8 @@ import com.inventory.dto.QuotationDto;
 import com.inventory.enums.QuotationStatus;
 import com.inventory.exception.ValidationException;
 import com.inventory.repository.CustomerRepository;
+import com.inventory.repository.BrandRepository;
+import com.inventory.repository.TransportMasterRepository;
 import com.inventory.repository.ProductRepository;
 import com.inventory.repository.QuotationItemRepository;
 import com.inventory.repository.QuotationRepository;
@@ -64,6 +66,8 @@ public class QuotationService {
     private final QuotationPdfGenerationService quotationPdfGenerationService;
     private final PurchaseRepository purchaseRepository;
     private final SaleRepository saleRepository;
+    private final BrandRepository brandRepository;
+    private final TransportMasterRepository transportMasterRepository;
     
 //    private final ProductQuantityService productQuantityService;
 //    private final QuotationItemCalculationRepository quotationItemCalculationRepository;
@@ -99,6 +103,17 @@ public class QuotationService {
             quotation.setTermsConditions(request.getTermsConditions());
             quotation.setContactNumber(request.getContactNumber());
             quotation.setAddress(request.getAddress());
+            // New fields
+            if (request.getTransportMasterId() != null) {
+                TransportMaster transportMaster = transportMasterRepository.findById(request.getTransportMasterId())
+                        .orElseThrow(() -> new ValidationException("Transport master not found"));
+                quotation.setTransportMaster(transportMaster);
+            } else {
+                quotation.setTransportMaster(null);
+            }
+            quotation.setCaseNumber(request.getCaseNumber());
+            quotation.setPackagingAndForwadingCharges(
+                    request.getPackagingAndForwadingCharges() != null ? request.getPackagingAndForwadingCharges() : BigDecimal.ZERO);
             quotation.setStatus(QuotationStatus.Q);
             quotation.setClient(currentUser.getClient());
             quotation.setCreatedBy(currentUser);
@@ -134,7 +149,8 @@ public class QuotationService {
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             quotation.setTotalAmount(totalAmount);
             quotation.setTaxAmount(taxAmount);
-            quotation.setDiscountedPrice(quotationDiscountPrice);
+            // discountedPrice should reflect sum of item discountPrice (pre-tax)
+            quotation.setDiscountedPrice(discountedPrice);
             quotation.setQuotationDiscountPercentage(request.getQuotationDiscountPercentage());
             quotation.setQuotationDiscountAmount(quotationDiscountAmount);
             quotationRepository.save(quotation);
@@ -200,7 +216,8 @@ public class QuotationService {
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             quotation.setTotalAmount(totalAmount);
             quotation.setTaxAmount(taxAmount);
-            quotation.setDiscountedPrice(quotationDiscountPrice);
+            // discountedPrice should reflect sum of item discountPrice (pre-tax)
+            quotation.setDiscountedPrice(discountedPrice);
             quotation.setQuotationDiscountPercentage(request.getQuotationDiscountPercentage());
             quotation.setQuotationDiscountAmount(quotationDiscountAmount);
             quotationRepository.save(quotation);
@@ -217,11 +234,6 @@ public class QuotationService {
         // Set default tax percentage if not provided
         if (product.getTaxPercentage() == null) {
             itemDto.setTaxPercentage(DEFAULT_TAX_PERCENTAGE);
-        }
-
-        // Set default discount percentage if not provided
-        if (itemDto.getDiscountPercentage() == null) {
-            itemDto.setDiscountPercentage(BigDecimal.ZERO);
         }
     }
 
@@ -247,37 +259,56 @@ public class QuotationService {
         item.setProduct(product);
         item.setQuantity(itemDto.getQuantity());
         item.setUnitPrice(itemDto.getUnitPrice());
-        item.setDiscountPercentage(itemDto.getDiscountPercentage());
         item.setTaxPercentage(product.getTaxPercentage());
+        // New optional relations and fields
+        if (itemDto.getBrandId() != null) {
+            Brand brand = brandRepository.findById(itemDto.getBrandId())
+                    .orElseThrow(() -> new ValidationException("Brand not found"));
+            if(!Objects.equals(brand.getClient().getId(), currentUser.getClient().getId())) {
+                throw new ValidationException("Brand is not available for you");
+            }
+            item.setBrand(brand);
+        } else {
+            item.setBrand(null);
+        }
+        item.setNumberOfRoll(itemDto.getNumberOfRoll() != null ? itemDto.getNumberOfRoll() : 0);
+        item.setWeightPerRoll(itemDto.getWeightPerRoll() != null ? itemDto.getWeightPerRoll() : BigDecimal.ZERO);
+        item.setRemarks(itemDto.getRemarks());
 
         // Calculate price components
         BigDecimal subTotal = itemDto.getUnitPrice().multiply(itemDto.getQuantity())
                 .setScale(2, RoundingMode.HALF_UP);
 
-        BigDecimal discountAmount = calculatePercentageAmount(subTotal, itemDto.getDiscountPercentage());
-        BigDecimal afterDiscount = subTotal.subtract(discountAmount);
-        
-        // Apply quotation discount percentage if provided
+        // Per requirement: no line-item discount
+        BigDecimal discountAmount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal afterDiscount = subTotal; // unchanged since discount removed
+
+        // Calculate tax on discountPrice (afterDiscount)
+        BigDecimal baseTaxAmount = calculatePercentageAmount(afterDiscount, product.getTaxPercentage());
+
+        // Apply quotation discount on tax only, if provided
         if (quotationRequestDto != null && quotationRequestDto.getQuotationDiscountPercentage() != null) {
             item.setQuotationDiscountPercentage(quotationRequestDto.getQuotationDiscountPercentage());
-            BigDecimal quotationDiscountAmount = calculatePercentageAmount(afterDiscount, quotationRequestDto.getQuotationDiscountPercentage());
-            item.setQuotationDiscountAmount(quotationDiscountAmount);
-            
-            // Calculate final price after applying quotation discount
-            BigDecimal quotationDiscountPrice = afterDiscount.subtract(quotationDiscountAmount);
-            item.setQuotationDiscountPrice(quotationDiscountPrice);
-            
-            // Calculate tax on the price after applying all discounts
-            BigDecimal taxAmount = calculatePercentageAmount(quotationDiscountPrice, product.getTaxPercentage());
-            item.setTaxAmount(taxAmount);
-            item.setFinalPrice(quotationDiscountPrice.add(taxAmount));
+            BigDecimal quotationDiscountAmountOnTax = calculatePercentageAmount(baseTaxAmount, quotationRequestDto.getQuotationDiscountPercentage());
+            item.setQuotationDiscountAmount(quotationDiscountAmountOnTax);
+
+            BigDecimal discountedTaxAmount = baseTaxAmount.subtract(quotationDiscountAmountOnTax).setScale(2, RoundingMode.HALF_UP);
+            item.setTaxAmount(discountedTaxAmount);
+
+            BigDecimal finalPrice = afterDiscount.add(discountedTaxAmount).setScale(2, RoundingMode.HALF_UP);
+            item.setFinalPrice(finalPrice);
+            // quotationDiscountPrice should reflect total after applying quotation discount (tax-only discount)
+            item.setQuotationDiscountPrice(finalPrice);
         } else {
-            BigDecimal taxAmount = calculatePercentageAmount(afterDiscount, product.getTaxPercentage());
+            BigDecimal taxAmount = baseTaxAmount.setScale(2, RoundingMode.HALF_UP);
             item.setTaxAmount(taxAmount);
-            item.setFinalPrice(afterDiscount.add(taxAmount));
+            BigDecimal finalPrice = afterDiscount.add(taxAmount).setScale(2, RoundingMode.HALF_UP);
+            item.setFinalPrice(finalPrice);
+            item.setQuotationDiscountPercentage(BigDecimal.ZERO);
+            item.setQuotationDiscountAmount(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+            item.setQuotationDiscountPrice(finalPrice);
         }
 
-        item.setDiscountAmount(discountAmount);
         item.setDiscountPrice(afterDiscount);
         item.setClient(currentUser.getClient());
 
@@ -326,6 +357,16 @@ public class QuotationService {
         quotation.setTermsConditions(request.getTermsConditions());
         quotation.setContactNumber(request.getContactNumber());
         quotation.setAddress(request.getAddress());
+        if (request.getTransportMasterId() != null) {
+            TransportMaster transportMaster = transportMasterRepository.findById(request.getTransportMasterId())
+                    .orElseThrow(() -> new ValidationException("Transport master not found"));
+            quotation.setTransportMaster(transportMaster);
+        } else {
+            quotation.setTransportMaster(null);
+        }
+        quotation.setCaseNumber(request.getCaseNumber());
+        quotation.setPackagingAndForwadingCharges(
+                request.getPackagingAndForwadingCharges() != null ? request.getPackagingAndForwadingCharges() : BigDecimal.ZERO);
         quotation.setUpdatedAt(OffsetDateTime.now());
         quotation.setUpdatedBy(currentUser);
     }
@@ -373,6 +414,9 @@ public class QuotationService {
             response.put("customerId", quotation.getCustomer() != null ? quotation.getCustomer().getId() : null);
             response.put("contactNumber", quotation.getContactNumber());
             response.put("address", quotation.getAddress());
+            response.put("transportMasterId", quotation.getTransportMaster() != null ? quotation.getTransportMaster().getId() : null);
+            response.put("caseNumber", quotation.getCaseNumber());
+            response.put("packagingAndForwadingCharges", quotation.getPackagingAndForwadingCharges());
             response.put("quotationDiscountPercentage", quotation.getQuotationDiscountPercentage());
             response.put("quotationDiscountAmount", quotation.getQuotationDiscountAmount());
 
@@ -385,8 +429,6 @@ public class QuotationService {
                 itemMap.put("productName", item.getProduct().getName());
                 itemMap.put("quantity", item.getQuantity());
                 itemMap.put("unitPrice", item.getUnitPrice());
-                itemMap.put("discountPercentage", item.getDiscountPercentage());
-                itemMap.put("discountAmount", item.getDiscountAmount());
                 itemMap.put("price", item.getDiscountPrice());
                 itemMap.put("taxPercentage", item.getTaxPercentage());
                 itemMap.put("taxAmount", item.getTaxAmount());
@@ -394,6 +436,11 @@ public class QuotationService {
                 itemMap.put("quotationDiscountPercentage", item.getQuotationDiscountPercentage());
                 itemMap.put("quotationDiscountAmount", item.getQuotationDiscountAmount());
                 itemMap.put("quotationDiscountPrice", item.getQuotationDiscountPrice());
+                itemMap.put("brandId", item.getBrand() != null ? item.getBrand().getId() : null);
+                itemMap.put("brandName", item.getBrand() != null ? item.getBrand().getName() : null);
+                itemMap.put("numberOfRoll", item.getNumberOfRoll());
+                itemMap.put("weightPerRoll", item.getWeightPerRoll());
+                itemMap.put("remarks", item.getRemarks());
 
                 itemsList.add(itemMap);
             }

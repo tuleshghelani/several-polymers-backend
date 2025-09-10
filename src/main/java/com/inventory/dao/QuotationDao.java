@@ -148,15 +148,18 @@ public class QuotationDao {
                 c.id as customer_id, q.customer_name, q.contact_number,
                 q.tax_amount as quotation_tax_amount, q.quotation_discount_percentage, 
                 q.quotation_discount_amount,
+                q.transport_master_id, q.case_number, q.packaging_and_forwading_charges,
                 qi.id as item_id, qi.quantity, qi.unit_price,
-                qi.discount_percentage, qi.discount_amount,
                 qi.tax_percentage, qi.tax_amount, qi.final_price,
                 p.id as product_id, p.name as product_name, 
-                qi.discount_price, qi.quotation_discount_price
+                qi.discount_price, qi.quotation_discount_price,
+                b.id as brand_id, b.name as brand_name,
+                qi.number_of_roll, qi.weight_per_roll, qi.remarks
             FROM (select * from quotation q where q.client_id = :clientId and q.id = :quotationId) q
             LEFT JOIN (select * from customer c where c.client_id = :clientId) c ON q.customer_id = c.id
             LEFT JOIN (select * from quotation_items qi where qi.client_id = :clientId) qi ON q.id = qi.quotation_id
             LEFT JOIN (select * from product p where p.client_id = :clientId) p ON qi.product_id = p.id
+            LEFT JOIN (select * from brand b where b.client_id = :clientId) b ON qi.brand_id = b.id
             WHERE q.id = :quotationId 
         """);
 
@@ -193,16 +196,17 @@ public class QuotationDao {
         quotation.put("quotationTaxAmount", firstRow[index++]);
         quotation.put("quotationDiscountPercentage", firstRow[index++]);
         quotation.put("quotationDiscountAmount", firstRow[index++]);
+        quotation.put("transportMasterId", firstRow[index++]);
+        quotation.put("caseNumber", firstRow[index++]);
+        quotation.put("packagingAndForwadingCharges", firstRow[index++]);
 
         // Process items
         for (Object[] row : results) {
-            index = 14;
+            index = 17;
             Map<String, Object> item = new HashMap<>();
             item.put("id", row[index++]);
             item.put("quantity", row[index++]);
             item.put("unitPrice", row[index++]);
-            item.put("discountPercentage", row[index++]);
-            item.put("discountAmount", row[index++]);
             item.put("taxPercentage", row[index++]);
             item.put("taxAmount", row[index++]);
             item.put("finalPrice", row[index++]);
@@ -210,6 +214,11 @@ public class QuotationDao {
             item.put("productName", row[index++]);
             item.put("discountPrice", row[index++]);
             item.put("quotationDiscountPrice", row[index++]);
+            item.put("brandId", row[index++]);
+            item.put("brandName", row[index++]);
+            item.put("numberOfRoll", row[index++]);
+            item.put("weightPerRoll", row[index++]);
+            item.put("remarks", row[index++]);
             items.add(item);
         }
 

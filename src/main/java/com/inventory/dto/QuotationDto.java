@@ -26,6 +26,9 @@ public class QuotationDto {
     private String quoteNumber;
     private BigDecimal totalAmount;
     private String status;
+    private Long transportMasterId;
+    private String caseNumber;
+    private BigDecimal packagingAndForwadingCharges;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate quoteDate;

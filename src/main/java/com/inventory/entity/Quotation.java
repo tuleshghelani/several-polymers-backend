@@ -39,7 +39,8 @@ import lombok.Setter;
         @Index(name = "idx_quotation_status", columnList = "status"),
         @Index(name = "idx_quotation_quote_date", columnList = "quote_date"),
         @Index(name = "idx_quotation_client_id", columnList = "client_id"),
-        @Index(name = "idx_quotation_quote_number", columnList = "quote_number")
+        @Index(name = "idx_quotation_quote_number", columnList = "quote_number"),
+        @Index(name = "idx_quotation_transport_master_id", columnList = "transport_master_id")
 }, uniqueConstraints = {
         @UniqueConstraint(name = "uk_quotation_quote_number", columnNames = "quote_number")
 })
@@ -95,6 +96,17 @@ public class Quotation {
 
     @Column(name = "quotation_discount_amount", precision = 19, scale = 2, columnDefinition = "NUMERIC(19, 2) DEFAULT 0.00")
     private BigDecimal quotationDiscountAmount = BigDecimal.ZERO;    
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transport_master_id",
+            foreignKey = @ForeignKey(name = "fk_quotation_transport_master_id"))
+    private TransportMaster transportMaster;
+
+    @Column(name = "case_number")
+    private String caseNumber;
+
+    @Column(name = "packaging_and_forwading_charges", precision = 19, scale = 2, columnDefinition = "NUMERIC(19, 2) DEFAULT 0.00")
+    private BigDecimal packagingAndForwadingCharges = BigDecimal.ZERO;
 
     @Column(name = "created_at", nullable = false, length = 29, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();
