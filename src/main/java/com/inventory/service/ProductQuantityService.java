@@ -113,9 +113,9 @@ public class ProductQuantityService {
     }
     
     private void handleSale(Product product, BigDecimal quantityChange) {
-        if (product.getRemainingQuantity().compareTo(quantityChange) < 0) {
-            throw new ValidationException("Insufficient stock for product: " + product.getName());
-        }
+//        if (product.getRemainingQuantity().compareTo(quantityChange) < 0) {
+//            throw new ValidationException("Insufficient stock for product: " + product.getName());
+//        }
         
         BigDecimal newRemainingQuantity = product.getRemainingQuantity().subtract(quantityChange);
 //        BigDecimal newTotalRemainingQuantity = product.getTotalRemainingQuantity().subtract(quantityChange);

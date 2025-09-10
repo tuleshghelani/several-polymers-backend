@@ -186,9 +186,12 @@ public class PurchaseService {
 
             for (PurchaseItem item : items) {
                 try {
-                    productQuantityService.reversePurchaseQuantity(
+                    productQuantityService.updateProductQuantity(
                             item.getProduct().getId(),
-                            item.getQuantity()
+                            item.getQuantity(),
+                            false,  // false to subtract the quantity,
+                            true,
+                            null
                     );
                 } catch (Exception e) {
                     log.error("Error reversing quantity for product {}: {}",
@@ -232,9 +235,12 @@ public class PurchaseService {
         // Reverse existing quantities without enforcing sale stock constraint
         List<PurchaseItem> existingItems = purchaseItemRepository.findByPurchaseId(request.getId());
         for (PurchaseItem item : existingItems) {
-            productQuantityService.reversePurchaseQuantity(
+            productQuantityService.updateProductQuantity(
                 item.getProduct().getId(),
-                item.getQuantity()
+                item.getQuantity(),
+                false,  // false to subtract the quantity,
+                true,
+                null
             );
         }
         
@@ -259,6 +265,14 @@ public class PurchaseService {
             newItems.add(item);
             purchaseItemRepository.save(item);
             totalAmount = totalAmount.add(item.getFinalPrice());
+            
+            productQuantityService.updateProductQuantity(
+                item.getProduct().getId(),
+                item.getQuantity(),
+                true,  // false to subtract the quantity,
+                false,
+                null
+            );
         }
         
         // Round the total amount
@@ -267,7 +281,7 @@ public class PurchaseService {
         purchaseRepository.save(existingPurchase);
         
         // Process items and update product quantities in batches
-        batchProcessingService.processPurchaseItems(newItems);
+//        batchProcessingService.processPurchaseItems(newItems);
         
         return ApiResponse.success("Purchase updated successfully");
     }

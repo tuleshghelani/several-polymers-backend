@@ -72,11 +72,13 @@ public class SaleService {
                 items.add(item);
                 saleItemRepository.save(item);
                 totalAmount = totalAmount.add(item.getFinalPrice());
-    //            productQuantityService.updateProductQuantity(
-    //                    item.getProduct().getId(),
-    //                    item.getQuantity(),
-    //                    true
-    //            );
+               productQuantityService.updateProductQuantity(
+                       item.getProduct().getId(),
+                       item.getQuantity(),
+                       false,
+                       true,
+                       null
+               );
             }
             
             // Round the total amount
@@ -85,7 +87,7 @@ public class SaleService {
             sale = saleRepository.save(sale);
             
             // Process items and update product quantities in batches
-           batchProcessingService.processSaleItems(items);
+        //    batchProcessingService.processSaleItems(items);
             
             return ApiResponse.success("Sale created successfully");
         } catch(ValidationException ve) {
@@ -236,9 +238,12 @@ public class SaleService {
         // Reverse existing quantities
         List<SaleItem> existingItems = saleItemRepository.findBySaleId(request.getId());
         for (SaleItem item : existingItems) {
-            productQuantityService.reverseSaleQuantity(
+            productQuantityService.updateProductQuantity(
                 item.getProduct().getId(),
-                item.getQuantity()
+                item.getQuantity(),
+                    true,  // not a purchase
+                    false,   // is a purchase (reverse)
+                    null    // no blocking
             );
         }
         
@@ -263,6 +268,14 @@ public class SaleService {
             newItems.add(item);
             saleItemRepository.save(item);
             totalAmount = totalAmount.add(item.getFinalPrice());
+
+            productQuantityService.updateProductQuantity(
+                item.getProduct().getId(),
+                item.getQuantity(),
+                false,  // false to subtract the quantity,
+                true,
+                null
+            );
         }
         
         // Round the total amount
@@ -271,7 +284,7 @@ public class SaleService {
         saleRepository.save(existingSale);
         
         // Process items and update product quantities in batches
-        batchProcessingService.processSaleItems(newItems);
+//        batchProcessingService.processSaleItems(newItems);
         
         return ApiResponse.success("Sale updated successfully");
     }
