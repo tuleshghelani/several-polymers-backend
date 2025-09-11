@@ -199,10 +199,14 @@ public class EmployeeService {
         employee.setStartTime(dto.getStartTime());
         employee.setRegularPay(dto.getRegularPay());
         employee.setOvertimePay(dto.getOvertimePay());
-        // Ensure days stored as empty array when not provided
-        if (dto.getDays() != null) {
-            employee.setDays(dto.getDays());
-        } else if (employee.getDays() == null) {
+        // Handle FIXED wage days; for non-FIXED always store empty array
+        if ("FIXED".equalsIgnoreCase(dto.getWageType())) {
+            if (dto.getDays() != null) {
+                employee.setDays(dto.getDays());
+            } else if (employee.getDays() == null) {
+                employee.setDays(new java.util.ArrayList<>());
+            }
+        } else {
             employee.setDays(new java.util.ArrayList<>());
         }
     }
@@ -219,6 +223,12 @@ public class EmployeeService {
         dto.setDepartment(employee.getDepartment());
         dto.setStatus(employee.getStatus());
         dto.setClientId(employee.getClient().getId());
+        dto.setWageType(employee.getWageType());
+        dto.setRegularHours(employee.getRegularHours());
+        dto.setStartTime(employee.getStartTime());
+        dto.setRegularPay(employee.getRegularPay());
+        dto.setOvertimePay(employee.getOvertimePay());
+        dto.setDays(employee.getDays());
         return dto;
     }
 } 
