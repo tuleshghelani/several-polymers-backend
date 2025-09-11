@@ -177,6 +177,11 @@ public class EmployeeService {
         if (dto.getStartTime() == null || dto.getStartTime().isAfter(LocalTime.of(23, 59, 59))) {
             throw new ValidationException("Start time must be before 11:59 PM");
         }
+
+        // Ensure days provided for FIXED type (can be empty, but not null)
+        if ("FIXED".equalsIgnoreCase(dto.getWageType()) && dto.getDays() == null) {
+            dto.setDays(new java.util.ArrayList<>());
+        }
     }
 
     private void mapDtoToEntity(EmployeeDto dto, Employee employee) {
@@ -194,6 +199,12 @@ public class EmployeeService {
         employee.setStartTime(dto.getStartTime());
         employee.setRegularPay(dto.getRegularPay());
         employee.setOvertimePay(dto.getOvertimePay());
+        // Ensure days stored as empty array when not provided
+        if (dto.getDays() != null) {
+            employee.setDays(dto.getDays());
+        } else if (employee.getDays() == null) {
+            employee.setDays(new java.util.ArrayList<>());
+        }
     }
 
 

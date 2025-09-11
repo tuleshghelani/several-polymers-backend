@@ -2,10 +2,13 @@ package com.inventory.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -59,6 +62,10 @@ public class Employee {
     
     @Column(name = "overtime_pay", precision = 7, scale = 2)
     private BigDecimal overtimePay;
+
+    @Column(name = "roles", columnDefinition = "jsonb default '[]'")
+    @Type(value = com.vladmihalcea.hibernate.type.json.JsonType.class)
+    private List<String> days = new ArrayList<>();
     
     @Column(name = "created_at", length = 29, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();

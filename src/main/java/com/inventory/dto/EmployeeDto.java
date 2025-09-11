@@ -11,6 +11,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @Getter
@@ -33,6 +34,7 @@ public class EmployeeDto {
     
     private BigDecimal regularPay;
     private BigDecimal overtimePay;
+    private List<String> days;
     
     @JsonDeserialize(using = CustomDateDeserializer.class)
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss", timezone = "IST")

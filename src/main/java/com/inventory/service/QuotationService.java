@@ -112,8 +112,6 @@ public class QuotationService {
                 quotation.setTransportMaster(null);
             }
             quotation.setCaseNumber(request.getCaseNumber());
-            quotation.setPackagingAndForwadingCharges(
-                    request.getPackagingAndForwadingCharges() != null ? request.getPackagingAndForwadingCharges() : BigDecimal.ZERO);
             quotation.setStatus(QuotationStatus.Q);
             quotation.setClient(currentUser.getClient());
             quotation.setCreatedBy(currentUser);
@@ -146,6 +144,9 @@ public class QuotationService {
 
             quotationItemRepository.saveAll(items);
 
+            BigDecimal packagingAndForwadingCharges = request.getPackagingAndForwadingCharges() != null ? request.getPackagingAndForwadingCharges() : BigDecimal.ZERO;
+            quotation.setPackagingAndForwadingCharges(packagingAndForwadingCharges);
+            totalAmount = totalAmount.add(packagingAndForwadingCharges);
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             quotation.setTotalAmount(totalAmount);
             quotation.setTaxAmount(taxAmount);
@@ -213,6 +214,9 @@ public class QuotationService {
 
             quotationItemRepository.saveAll(items);
 
+            BigDecimal packagingAndForwadingCharges = request.getPackagingAndForwadingCharges() != null ? request.getPackagingAndForwadingCharges() : BigDecimal.ZERO;
+            quotation.setPackagingAndForwadingCharges(packagingAndForwadingCharges);
+            totalAmount = totalAmount.add(packagingAndForwadingCharges);
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             quotation.setTotalAmount(totalAmount);
             quotation.setTaxAmount(taxAmount);
@@ -365,8 +369,6 @@ public class QuotationService {
             quotation.setTransportMaster(null);
         }
         quotation.setCaseNumber(request.getCaseNumber());
-        quotation.setPackagingAndForwadingCharges(
-                request.getPackagingAndForwadingCharges() != null ? request.getPackagingAndForwadingCharges() : BigDecimal.ZERO);
         quotation.setUpdatedAt(OffsetDateTime.now());
         quotation.setUpdatedBy(currentUser);
     }

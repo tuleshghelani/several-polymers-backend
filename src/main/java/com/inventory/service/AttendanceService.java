@@ -112,15 +112,21 @@ public class AttendanceService {
     }
 
     private BigDecimal calculateRegularPay(Employee employee, BigDecimal regularHours) {
-        if (!"HOURLY".equalsIgnoreCase(employee.getWageType())) {
-            return employee.getRegularPay() != null ? employee.getRegularPay() : BigDecimal.ZERO;
+        BigDecimal configuredPay = employee.getRegularPay() != null ? employee.getRegularPay() : BigDecimal.ZERO;
+        
+        // For FIXED wage type, pay per attendance day = monthly salary / 30 (always divide by 30)
+        if ("FIXED".equalsIgnoreCase(employee.getWageType())) {
+            return configuredPay.divide(BigDecimal.valueOf(30), 2, RoundingMode.HALF_UP);
         }
         
-        BigDecimal hourlyRate = employee.getRegularPay() != null ? 
-            employee.getRegularPay() : BigDecimal.ZERO;
+        // For HOURLY wage type, pay = hourly rate * regular hours
+        if ("HOURLY".equalsIgnoreCase(employee.getWageType())) {
+            return configuredPay.multiply(regularHours)
+                .setScale(2, RoundingMode.HALF_UP);
+        }
         
-        return hourlyRate.multiply(regularHours)
-            .setScale(2, RoundingMode.HALF_UP);
+        // Default fallback (unknown wage type)
+        return configuredPay.setScale(2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculateOvertimePay(Employee employee, BigDecimal overtimeHours) {

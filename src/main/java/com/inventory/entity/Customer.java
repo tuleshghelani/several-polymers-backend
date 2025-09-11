@@ -16,6 +16,7 @@ import java.math.BigDecimal;
     @Index(name = "idx_customer_name", columnList = "name"),
     @Index(name = "idx_customer_mobile", columnList = "mobile"),
     @Index(name = "idx_customer_email", columnList = "email"),
+    @Index(name = "idx_customer_status", columnList = "status"),
     @Index(name = "idx_customer_remaining_payment_amount", columnList = "remaining_payment_amount"),
     @Index(name = "idx_customer_client_id", columnList = "client_id")
 })
