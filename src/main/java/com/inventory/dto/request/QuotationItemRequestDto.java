@@ -31,4 +31,6 @@ public class QuotationItemRequestDto {
     private BigDecimal weightPerRoll = BigDecimal.ZERO;
     private String remarks;
 //    private BigDecimal loadingCharge;
+    private Boolean isProduction = false;
+    private String quotationItemStatus;
 }

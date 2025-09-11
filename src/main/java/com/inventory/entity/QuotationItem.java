@@ -93,6 +93,12 @@ public class QuotationItem {
     @Column(name = "remarks")
     private String remarks;
 
+    @Column(name = "is_production", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean isProduction = false;
+
+    @Column(name = "quotation_item_status", length = 4)
+    private String quotationItemStatus;
+
     @Version
     private Long version;
 }

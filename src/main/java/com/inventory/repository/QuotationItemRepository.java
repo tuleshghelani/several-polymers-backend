@@ -1,16 +1,12 @@
 package com.inventory.repository;
 
-import com.inventory.entity.Quotation;
 import com.inventory.entity.QuotationItem;
-import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface QuotationItemRepository extends JpaRepository<QuotationItem, Long> {
@@ -20,4 +16,12 @@ public interface QuotationItemRepository extends JpaRepository<QuotationItem, Lo
     void deleteByQuotationId(Long quotationId);
 
     List<QuotationItem> findByQuotationId(Long quotationId);
+
+    @Modifying
+    @Query("UPDATE QuotationItem qi SET qi.quotationItemStatus = :status WHERE qi.id = :id")
+    int updateQuotationItemStatusById(Long id, String status);
+
+    @Modifying
+    @Query("UPDATE QuotationItem qi SET qi.isProduction = :isProduction WHERE qi.id = :id")
+    int updateIsProductionById(Long id, boolean isProduction);
 }

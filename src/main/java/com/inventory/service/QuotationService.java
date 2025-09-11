@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.inventory.dto.request.QuotationItemRequestDto;
+import com.inventory.dto.request.QuotationItemProductionUpdateDto;
+import com.inventory.dto.request.QuotationItemStatusUpdateDto;
 import com.inventory.dto.request.QuotationRequestDto;
 import com.inventory.dto.request.QuotationStatusUpdateDto;
 import com.inventory.entity.*;
@@ -278,6 +280,9 @@ public class QuotationService {
         item.setNumberOfRoll(itemDto.getNumberOfRoll() != null ? itemDto.getNumberOfRoll() : 0);
         item.setWeightPerRoll(itemDto.getWeightPerRoll() != null ? itemDto.getWeightPerRoll() : BigDecimal.ZERO);
         item.setRemarks(itemDto.getRemarks());
+        // New fields
+        item.setProduction(Boolean.TRUE.equals(itemDto.getIsProduction()));
+        item.setQuotationItemStatus(itemDto.getQuotationItemStatus());
 
         // Calculate price components
         BigDecimal subTotal = itemDto.getUnitPrice().multiply(itemDto.getQuantity())
@@ -351,6 +356,38 @@ public class QuotationService {
                 throw new ValidationException("Valid unit price is required");
             }
         });
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<?> updateQuotationItemStatus(QuotationItemStatusUpdateDto request) {
+        UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+        QuotationItem item = quotationItemRepository.findById(request.getId())
+                .orElseThrow(() -> new ValidationException("Quotation item not found"));
+        if (!item.getClient().getId().equals(currentUser.getClient().getId())) {
+            throw new ValidationException("Unauthorized access to quotation item");
+        }
+        String status = request.getQuotationItemStatus();
+        int updated = quotationItemRepository.updateQuotationItemStatusById(item.getId(), status);
+        if (updated == 0) {
+            throw new ValidationException("Failed to update quotation item status");
+        }
+        return ApiResponse.success("Quotation item status updated successfully");
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<?> updateQuotationItemProduction(QuotationItemProductionUpdateDto request) {
+        UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+        QuotationItem item = quotationItemRepository.findById(request.getId())
+                .orElseThrow(() -> new ValidationException("Quotation item not found"));
+        if (!item.getClient().getId().equals(currentUser.getClient().getId())) {
+            throw new ValidationException("Unauthorized access to quotation item");
+        }
+        boolean prod = Boolean.TRUE.equals(request.getIsProduction());
+        int updated = quotationItemRepository.updateIsProductionById(item.getId(), prod);
+        if (updated == 0) {
+            throw new ValidationException("Failed to update quotation item production flag");
+        }
+        return ApiResponse.success("Quotation item production flag updated successfully");
     }
 
     private void updateQuotationDetails(Quotation quotation, QuotationRequestDto request, UserMaster currentUser) {
