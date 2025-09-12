@@ -146,6 +146,7 @@ public class QuotationDao {
                 q.id, q.quote_number, q.quote_date, q.valid_until,
                 q.total_amount, q.status, q.remarks, q.terms_conditions,
                 c.id as customer_id, q.customer_name, q.contact_number,
+                coalesce(q.address, c.address) as address,
                 q.tax_amount as quotation_tax_amount, q.quotation_discount_percentage, 
                 q.quotation_discount_amount,
                 q.transport_master_id, q.case_number, q.packaging_and_forwading_charges,
@@ -193,6 +194,7 @@ public class QuotationDao {
         quotation.put("customerId", firstRow[index++]);
         quotation.put("customerName", firstRow[index++]);
         quotation.put("contactNumber", firstRow[index++]);
+        quotation.put("address", firstRow[index++]);
         quotation.put("quotationTaxAmount", firstRow[index++]);
         quotation.put("quotationDiscountPercentage", firstRow[index++]);
         quotation.put("quotationDiscountAmount", firstRow[index++]);
@@ -202,7 +204,7 @@ public class QuotationDao {
 
         // Process items
         for (Object[] row : results) {
-            index = 17;
+            index = 18;
             Map<String, Object> item = new HashMap<>();
             item.put("id", row[index++]);
             item.put("quantity", row[index++]);

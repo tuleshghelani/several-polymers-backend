@@ -28,7 +28,7 @@ public class QuotationItemRequestDto {
     private BigDecimal quotationDiscountAmount = BigDecimal.ZERO;
     private BigDecimal quotationDiscountPrice = BigDecimal.ZERO;
     private Integer numberOfRoll = 0;
-    private Integer createdRoll = 0;
+    private Integer createdRoll;
     private BigDecimal weightPerRoll = BigDecimal.ZERO;
     private String remarks;
 //    private BigDecimal loadingCharge;

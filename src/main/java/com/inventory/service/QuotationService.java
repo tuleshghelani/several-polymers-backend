@@ -386,8 +386,7 @@ public class QuotationService {
         if (!item.getClient().getId().equals(currentUser.getClient().getId())) {
             throw new ValidationException("Unauthorized access to quotation item");
         }
-        boolean prod = Boolean.TRUE.equals(request.getIsProduction());
-        int updated = quotationItemRepository.updateIsProductionById(item.getId(), prod);
+        int updated = quotationItemRepository.updateIsProductionById(item.getId(), request.getIsProduction());
         if (updated == 0) {
             throw new ValidationException("Failed to update quotation item production flag");
         }
@@ -456,7 +455,7 @@ public class QuotationService {
             response.put("customerName", quotation.getCustomerName());
             response.put("customerId", quotation.getCustomer() != null ? quotation.getCustomer().getId() : null);
             response.put("contactNumber", quotation.getContactNumber());
-            response.put("address", quotation.getAddress());
+            response.put("address", quotation.getAddress() != null ? quotation.getAddress() : quotation.getCustomer().getAddress());
             response.put("transportMasterId", quotation.getTransportMaster() != null ? quotation.getTransportMaster().getId() : null);
             response.put("caseNumber", quotation.getCaseNumber());
             response.put("packagingAndForwadingCharges", quotation.getPackagingAndForwadingCharges());
@@ -482,6 +481,9 @@ public class QuotationService {
                 itemMap.put("brandId", item.getBrand() != null ? item.getBrand().getId() : null);
                 itemMap.put("brandName", item.getBrand() != null ? item.getBrand().getName() : null);
                 itemMap.put("numberOfRoll", item.getNumberOfRoll());
+                itemMap.put("createdRoll", item.getCreatedRoll());
+                itemMap.put("isProduction", item.getIsProduction());
+                itemMap.put("quotationItemStatus", item.getQuotationItemStatus());
                 itemMap.put("weightPerRoll", item.getWeightPerRoll());
                 itemMap.put("remarks", item.getRemarks());
 

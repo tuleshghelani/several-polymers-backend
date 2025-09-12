@@ -43,14 +43,19 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class QuotationPdfGenerationService {
-    // Color scheme as per requirements
-    private static final Color PRIMARY_COLOR = new DeviceRgb(245, 106, 73);     // #f56a49
-    private static final Color SECONDARY_COLOR = new DeviceRgb(0, 63, 105);     // #003f69
-    private static final Color PRIMARY_LIGHT = new DeviceRgb(255, 139, 115);    // #ff8b73
-    private static final Color SECONDARY_LIGHT = new DeviceRgb(0, 92, 158);     // #005c9e
-    private static final Color TEXT_DARK = new DeviceRgb(51, 51, 51);           // #333333
-    private static final Color TEXT_LIGHT = new DeviceRgb(255, 255, 255);       // #ffffff
-    private static final Color BACKGROUND_LIGHT = new DeviceRgb(245, 245, 245); // #f5f5f5
+    // Color scheme (updated as per request)
+    // Base
+    private static final Color PRIMARY_COLOR = new DeviceRgb(56, 166, 219);      // #38a6db
+    private static final Color SECONDARY_COLOR = new DeviceRgb(30, 85, 150);     // #1e5596
+    private static final Color BACKGROUND_LIGHT = new DeviceRgb(253, 245, 236);  // #FDF5EC
+    private static final Color TEXT_DARK = new DeviceRgb(51, 51, 51);            // #333333
+    private static final Color TEXT_MUTED = new DeviceRgb(118, 118, 118);        // #767676
+    private static final Color SUPPORTING_COLOR = new DeviceRgb(174, 198, 207);  // #AEC6CF
+    private static final Color TEXT_LIGHT = new DeviceRgb(255, 255, 255);        // #ffffff
+
+    // Derived lights
+    private static final Color PRIMARY_LIGHT = new DeviceRgb(191, 230, 246);     // #BFE6F6 softer tint of primary
+    private static final Color SECONDARY_LIGHT = new DeviceRgb(157, 185, 225);   // #9DB9E1 softer tint of secondary
 
     private static final BigDecimal SQ_FEET_TO_METER = BigDecimal.valueOf(10.764);
     private static final BigDecimal MM_TO_METER = BigDecimal.valueOf(1000);
@@ -73,8 +78,7 @@ public class QuotationPdfGenerationService {
             addBankDetailsAndTerms(document);
             addPageFooter(pdf, document, 3);
 
-            addLastPage(document);
-            addPageFooter(pdf, document, 4);
+            // Removed last decorative page as requested
 
             document.close();
             return outputStream.toByteArray();
@@ -86,85 +90,72 @@ public class QuotationPdfGenerationService {
     }
 
     private void addHeader(Document document, Map<String, Object> data) {
-        
-        // First add the logo in the center
-        Table logoTable = new Table(1).useAllAvailableWidth();
-        Cell logoCell = new Cell();
-        try {
-            InputStream imageStream = getClass().getClassLoader().getResourceAsStream("quotation/jk_logo.png");
-            if (imageStream == null) {
-                log.error("Image not found: quotation/jk_logo.png");
-                throw new FileNotFoundException("Image not found: quotation/jk_logo.png");
-            }
-            log.info("Successfully loaded logo image: quotation/jk_logo.png");
-            ImageData imageData = ImageDataFactory.create(imageStream.readAllBytes());
-            Image img = new Image(imageData);
-            img.setWidth(200);
-            img.setHeight(50);
-            // Center the image horizontally
-            img.setHorizontalAlignment(HorizontalAlignment.CENTER);
-            logoCell.add(img);
-        } catch (Exception e) {
-            log.error("Error loading logo image: quotation/jk_logo.png", e);
-        }
-        logoCell.setBorder(new SolidBorder(SECONDARY_COLOR, 1))
-                .setBackgroundColor(BACKGROUND_LIGHT)
-                .setPadding(5)
-                .setTextAlignment(TextAlignment.CENTER);
-        logoTable.addCell(logoCell);
-        document.add(logoTable);
-        
-        // Logo and details in separate table - immediately after logo without spacing
-        Table contentTable = new Table(1).useAllAvailableWidth();
-        // Removed margin between logo and content table
+        // Compact header: logo left, company info right, minimal padding
+        // Table headerTable = new Table(new float[]{2, 5}).useAllAvailableWidth();
+        // headerTable.setMarginTop(0).setMarginBottom(4);
 
-        // Left side - Details with styled background
-        Cell detailsCell = new Cell();
-        detailsCell.add(new Paragraph("Address :- Radhekrishan Chowk, Sojitra park, Mavdi,")
-                        .setFontSize(10)
-                        .setFontColor(TEXT_DARK))
-                .add(new Paragraph("baypass road, Dist. Rajkot, Gujarat - 360005")
-                        .setFontSize(10)
-                        .setFontColor(TEXT_DARK))
-                .add(new Paragraph("E-mail: jkindustries1955@gmail.com")
-                        .setFontSize(10)
-                        .setFontColor(TEXT_DARK))
-                .add(new Paragraph("Mo.No. 9979032430")
-                        .setFontSize(10)
-                        .setFontColor(TEXT_DARK))
-                .add(new Paragraph("GST NO.24AAMFJ9388A1Z4")
-                        .setFontSize(11)
+        // // Logo cell
+        // Cell logoCell = new Cell();
+        // try (InputStream imageStream = getClass().getClassLoader().getResourceAsStream("quotation/several_logo.jpg")) {
+        //     if (imageStream != null) {
+        //         ImageData imageData = ImageDataFactory.create(imageStream.readAllBytes());
+        //         Image img = new Image(imageData);
+        //         img.setWidth(150);
+        //         img.setHeight(40);
+        //         img.setHorizontalAlignment(HorizontalAlignment.LEFT);
+        //         logoCell.add(img);
+        //     } else {
+        //         logoCell.add(new Paragraph("SEVERAL POLYMERS").setBold().setFontColor(PRIMARY_COLOR));
+        //     }
+        // } catch (Exception e) {
+        //     logoCell.add(new Paragraph("SEVERAL POLYMERS").setBold().setFontColor(PRIMARY_COLOR));
+        // }
+        // logoCell.setBorder(Border.NO_BORDER).setPadding(2);
+
+        // // Company info cell (compact)
+        // Cell infoCell = new Cell();
+        // infoCell.add(new Paragraph("MOVAIYA, TA - PADDHARI, RAJKOT, Rajkot, Gujarat, 360110")
+        //                 .setFontSize(9).setFontColor(TEXT_DARK))
+        //         .add(new Paragraph("E-mail: severalpolymers@gmail.com | Mo. 7490044572")
+        //                 .setFontSize(9).setFontColor(TEXT_DARK))
+        //         .add(new Paragraph("GST NO.24DMAPP6011D1ZL").setFontSize(9).setBold().setFontColor(SECONDARY_COLOR));
+        // infoCell.setBorder(Border.NO_BORDER).setPadding(2).setTextAlignment(TextAlignment.RIGHT);
+
+        // headerTable.addCell(logoCell);
+        // headerTable.addCell(infoCell);
+        // document.add(headerTable);
+
+        // Thin heading bar
+        
+        Table headingTable = new Table(1).useAllAvailableWidth();
+        Cell headingTableCell = new Cell()
+                .add(new Paragraph("SEVERAL POLYMERS").setTextAlignment(TextAlignment.CENTER)
+                        .setFontSize(12).setBold().setFontColor(PRIMARY_COLOR))
+                // .add(new Paragraph(formatValue(data.get("customerName")))
                         .setBold()
-                        .setFontColor(PRIMARY_COLOR))
-                .setBorder(new SolidBorder(PRIMARY_COLOR, 1))
-                .setBackgroundColor(BACKGROUND_LIGHT)
-                .setPadding(10)
-                .setTextAlignment(TextAlignment.LEFT);
+                        .setFontSize(10)
+                        .setFontColor(TEXT_LIGHT)
+                .setPadding(2);
+        headingTable.addCell(headingTableCell);
+        document.add(headingTable);
 
-        contentTable.addCell(detailsCell);
-        document.add(contentTable);
-
-        // Add styled quotation heading with appearance
         Table quotationHeadingTable = new Table(1).useAllAvailableWidth();
         Cell quotationHeadingCell = new Cell()
-                .add(new Paragraph("Quotation")
-                        .setTextAlignment(TextAlignment.CENTER)
-                        .setFontSize(14)
+                .add(new Paragraph("Quotation").setTextAlignment(TextAlignment.CENTER)
+                        .setFontSize(12).setBold().setFontColor(TEXT_LIGHT))
+                // .add(new Paragraph(formatValue(data.get("customerName")))
                         .setBold()
-                        .setFontColor(TEXT_LIGHT))
+                        .setFontSize(10)
+                        .setFontColor(PRIMARY_COLOR)
                 .setBackgroundColor(PRIMARY_COLOR)
-                .setPadding(1);
+                .setPadding(2);
         quotationHeadingTable.addCell(quotationHeadingCell);
-        
-        document.add(new Paragraph("\n"));
         document.add(quotationHeadingTable);
     }
 
     private void addQuotationDetails(Document document, Map<String, Object> data) {
-        document.add(new Paragraph("\n"));
-
-        // Create a styled box for customer details
-        Table infoTable = new Table(1).useAllAvailableWidth();
+        // Compact details, reduced padding and font sizes
+        Table infoTable = new Table(new float[]{1}).useAllAvailableWidth();
         Cell infoCell = new Cell();
         
         // Customer details with highlighting
@@ -173,27 +164,33 @@ public class QuotationPdfGenerationService {
         //         .setFontSize(12)
         //         .setFontColor(SECONDARY_COLOR);
         
-        Paragraph customerName = new Paragraph(data.get("customerName").toString())
+        Paragraph customerName = new Paragraph(formatValue(data.get("customerName")))
                 .setBold()
-                .setFontSize(12)
+                .setFontSize(10)
                 .setFontColor(PRIMARY_COLOR);
+        Paragraph customerAddress = new Paragraph(formatValue(data.get("address")))
+                .setFontSize(8)
+                .setFontColor(TEXT_DARK);
         
-        Table detailsTable = new Table(2).useAllAvailableWidth();
-        
-        // Quote details with styling
-        addDetailRow(detailsTable, "Quote Number", data.get("quoteNumber").toString());
-        addDetailRow(detailsTable, "Quote Date", data.get("quoteDate").toString());
-        addDetailRow(detailsTable, "Valid Until", data.get("validUntil").toString());
-        
-        if (data.get("contactNumber") != null) {
-            addDetailRow(detailsTable, "Mobile No.", data.get("contactNumber").toString());
-        }
+        // 4-column grid: [label, value, label, value]
+        Table detailsTable = new Table(new float[]{1.6f, 2.4f, 1.6f, 2.4f}).useAllAvailableWidth();
+
+        // Row 1: Quote Number | Quote Date
+        addDetailPair(detailsTable,
+                "Quote Number", formatValue(data.get("quoteNumber")),
+                "Quote Date", formatValue(data.get("quoteDate")));
+
+        // Row 2: Valid Until | Mobile No.
+        addDetailPair(detailsTable,
+                "Valid Until", formatValue(data.get("validUntil")),
+                "Mobile No.", formatValue(data.get("contactNumber")));
         
         infoCell.add(customerName)
+                .add(customerAddress)
                 .add(detailsTable)
                 .setBackgroundColor(BACKGROUND_LIGHT)
                 .setBorder(new SolidBorder(SECONDARY_LIGHT, 1))
-                .setPadding(15);
+                .setPadding(6);
                 
         infoTable.addCell(infoCell);
         document.add(infoTable);
@@ -217,15 +214,26 @@ public class QuotationPdfGenerationService {
     
     private void addDetailRow(Table table, String label, String value) {
         Cell labelCell = new Cell()
-                .add(new Paragraph(label + ":").setBold().setFontColor(SECONDARY_COLOR))
+                .add(new Paragraph(label + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR))
                 .setBorder(Border.NO_BORDER);
         
         Cell valueCell = new Cell()
-                .add(new Paragraph(value).setFontColor(TEXT_DARK))
+                .add(new Paragraph(value).setFontSize(9).setFontColor(TEXT_DARK))
                 .setBorder(Border.NO_BORDER);
         
         table.addCell(labelCell);
         table.addCell(valueCell);
+    }
+
+    private void addDetailPair(Table table, String label1, String value1, String label2, String value2) {
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(label1 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(value1).setFontSize(7).setFontColor(TEXT_DARK)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(label2 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(value2).setFontSize(9).setFontColor(TEXT_DARK)));
     }
 
     private void addItemsTable(Document document, List<Map<String, Object>> items, Map<String, Object> quotationData) {
@@ -234,20 +242,30 @@ public class QuotationPdfGenerationService {
         // Add title for items section
         Paragraph itemsTitle = new Paragraph("Items & Services")
                 .setBold()
-                .setFontSize(16)
+                .setFontSize(10)
                 .setFontColor(SECONDARY_COLOR)
-                .setMarginBottom(10);
+                .setMarginBottom(5);
         document.add(itemsTitle);
         
         // Create styled table
-        Table table = new Table(new float[]{1, 4, 2, 2, 1, 2})
+        Table table = new Table(new float[]{1, 5, 2, 2, 2, 2, 2, 2, 2})
                 .useAllAvailableWidth()
-                .setMarginTop(5);
+                .setMarginTop(2);
 
         // Add headers with styling
-        Stream.of("No.", "ITEM NAME", "QUANTITY", "PRICE", "DISCOUNT.(%)", "TOTAL AMOUNT")
+        Stream.of(
+                "No.",
+                "Item Name",
+                "No. Of Roll",
+                "WEIGHT PER ROLL",
+                "QUANTITY",
+                "Unit Price",
+                "Amount",
+                "GST",
+                "Total Amount"
+        )
                 .forEach(title -> table.addHeaderCell(
-                        new Cell().add(new Paragraph(title))
+                        new Cell().add(new Paragraph(title).setFontSize(9))
                                 .setBackgroundColor(SECONDARY_COLOR)
                                 .setFontColor(TEXT_LIGHT)
                                 .setBold()
@@ -257,40 +275,63 @@ public class QuotationPdfGenerationService {
         // Add items with alternating row colors for look
         AtomicInteger counter = new AtomicInteger(1);
         BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal totalTax = BigDecimal.ZERO;
 
         for (Map<String, Object> item : items) {
             boolean isEvenRow = counter.get() % 2 == 0;
             Color rowColor = isEvenRow ? BACKGROUND_LIGHT : ColorConstants.WHITE;
             
             table.addCell(new Cell()
-                    .add(new Paragraph(String.valueOf(counter.getAndIncrement())))
+                    .add(new Paragraph(String.valueOf(counter.getAndIncrement())).setFontSize(8))
                     .setBackgroundColor(rowColor));
                     
             table.addCell(new Cell()
-                    .add(convertHtmlToParagraph(item, true))
+                    .add(convertHtmlToParagraph(item, true).setFontSize(8))
                     .setBackgroundColor(rowColor));
                     
-            String measurement = item.get("measurement") != null ? item.get("measurement").toString().trim() : "";
-            String displayMeasurement = measurement.toLowerCase().equals("kg") ? 
-                    "\n " + measurement + "(approx.)" : "\n" + measurement;
-
+            // NUMBER OF ROLL
             table.addCell(new Cell()
-                    .add(new Paragraph(((BigDecimal) item.get("quantity")).setScale(0, RoundingMode.DOWN).toString() + " " + displayMeasurement))
-                    .setBackgroundColor(rowColor));
-                    
-            table.addCell(new Cell()
-                    .add(new Paragraph(item.get("unitPrice").toString()))
-                    .setBackgroundColor(rowColor));
-                    
-            table.addCell(new Cell()
-                .add(new Paragraph(item.get("discountPercentage").toString()))
-                .setBackgroundColor(rowColor));
-                    
-            table.addCell(new Cell()
-                    .add(new Paragraph(item.get("discountPrice").toString()))
+                    .add(new Paragraph(formatValue(item.get("numberOfRoll"))).setFontSize(8))
                     .setBackgroundColor(rowColor));
 
-            totalAmount = totalAmount.add(new BigDecimal(item.get("discountPrice").toString()));
+            // WEIGHT/ROLL
+            table.addCell(new Cell()
+                    .add(new Paragraph(formatValue(item.get("weightPerRoll"))).setFontSize(8))
+                    .setBackgroundColor(rowColor));
+
+            // QUANTITY
+            BigDecimal quantity = toBigDecimal(item.get("quantity"));
+            table.addCell(new Cell()
+                    .add(new Paragraph(quantity.setScale(0, RoundingMode.DOWN).toString()).setFontSize(8))
+                    .setBackgroundColor(rowColor));
+
+            // UNIT PRICE
+            BigDecimal unitPrice = toBigDecimal(item.get("unitPrice"));
+            table.addCell(new Cell()
+                    .add(new Paragraph(unitPrice.toPlainString()).setFontSize(8))
+                    .setBackgroundColor(rowColor));
+
+            // ITEM PRICE (pre-tax, i.e., discountPrice if present, else price)
+            Object priceSource = item.get("discountPrice") != null ? item.get("discountPrice") : item.get("price");
+            BigDecimal itemPrice = toBigDecimal(priceSource);
+            table.addCell(new Cell()
+                    .add(new Paragraph(itemPrice.toPlainString()).setFontSize(8))
+                    .setBackgroundColor(rowColor));
+
+            // GST (taxAmount)
+            BigDecimal gstAmount = toBigDecimal(item.get("taxAmount"));
+            table.addCell(new Cell()
+                    .add(new Paragraph(gstAmount.toPlainString()).setFontSize(8))
+                    .setBackgroundColor(rowColor));
+
+            // FINAL PRICE
+            BigDecimal finalPrice = toBigDecimal(item.get("finalPrice"));
+            table.addCell(new Cell()
+                    .add(new Paragraph(finalPrice.toPlainString()).setFontSize(8))
+                    .setBackgroundColor(rowColor));
+
+            totalAmount = totalAmount.add(itemPrice);
+            totalTax = totalTax.add(gstAmount);
         }
 
         document.add(table);
@@ -298,7 +339,7 @@ public class QuotationPdfGenerationService {
         // Create summary table with styling
         Table summaryTable = new Table(2)
                 .useAllAvailableWidth()
-                .setMarginTop(20);
+                .setMarginTop(10);
                 
         summaryTable.addCell(new Cell()
                 .setBorder(Border.NO_BORDER)
@@ -312,25 +353,24 @@ public class QuotationPdfGenerationService {
         addTotalRow(totalsTable, "SUBTOTAL", totalAmount.toString() + "/-", false);
 
         // Quotation discount
-        BigDecimal quotationDiscountPercentage = ((BigDecimal) quotationData.get("quotationDiscountPercentage"));
-        addTotalRow(totalsTable, "Quotation discount (%)", quotationDiscountPercentage.toString() + "%", false);
-
-        // Quotation discount in Rs
-        BigDecimal quotationDiscountAmount = ((BigDecimal) quotationData.get("quotationDiscountAmount"));
-        addTotalRow(totalsTable, "Quotation discount (Rs.)", quotationDiscountAmount.toString() + "/-", false);
+        BigDecimal quotationDiscountPercentage = toBigDecimal(quotationData.get("quotationDiscountPercentage"));
+        addTotalRow(totalsTable, "Quotation discount (%)", quotationDiscountPercentage.toPlainString() + "%", false);
         
-        // GST calculation
-        BigDecimal gstAmount = ((BigDecimal) quotationData.get("quotationTaxAmount")).setScale(0, RoundingMode.HALF_UP);
-        addTotalRow(totalsTable, "GST 18 % (SGST 9% CGST 9%)", gstAmount.toString() + "/-", false);
+        // GST calculation (overall)
+        BigDecimal gstAmount = toBigDecimal(quotationData.get("quotationTaxAmount")).setScale(0, RoundingMode.HALF_UP);
+        addTotalRow(totalsTable, "GST", gstAmount.toPlainString() + "/-", false);
+        // Packaging & Forwarding charges (from quotation)
+        BigDecimal packagingCharges = toBigDecimal(quotationData.get("packagingAndForwadingCharges"));
+        addTotalRow(totalsTable, "PACKAGING & FORWARDING", packagingCharges.toPlainString() + "/-", false);
         
         // Grand total with prominent styling
-        BigDecimal grandTotal = ((BigDecimal) quotationData.get("totalAmount")).setScale(0, RoundingMode.HALF_UP);
-        addTotalRow(totalsTable, "GRAND TOTAL", grandTotal.toString() + "/-", true);
+        BigDecimal grandTotal = toBigDecimal(quotationData.get("totalAmount")).setScale(0, RoundingMode.HALF_UP);
+        addTotalRow(totalsTable, "GRAND TOTAL", grandTotal.toPlainString() + "/-", true);
         
         totalsCell.add(totalsTable)
                 .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
                 .setBackgroundColor(BACKGROUND_LIGHT)
-                .setPadding(10);
+                .setPadding(6);
                 
         summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)); // Empty cell
         summaryTable.addCell(totalsCell);
@@ -342,13 +382,15 @@ public class QuotationPdfGenerationService {
         Cell labelCell = new Cell()
                 .add(new Paragraph(label)
                         .setBold()
-                        .setFontColor(isGrandTotal ? PRIMARY_COLOR : SECONDARY_COLOR))
+                        .setFontColor(isGrandTotal ? PRIMARY_COLOR : SECONDARY_COLOR)
+                        .setFontSize(isGrandTotal ? 10 : 8))
                 .setBorder(Border.NO_BORDER);
                 
         Cell valueCell = new Cell()
                 .add(new Paragraph(value)
                         .setBold()
-                        .setFontColor(isGrandTotal ? PRIMARY_COLOR : TEXT_DARK))
+                        .setFontColor(isGrandTotal ? PRIMARY_COLOR : TEXT_DARK)
+                        .setFontSize(isGrandTotal ? 10 : 8))
                 .setBorder(Border.NO_BORDER)
                 .setTextAlignment(TextAlignment.RIGHT);
                 
@@ -357,9 +399,7 @@ public class QuotationPdfGenerationService {
             labelCell.setBorderTop(new SolidBorder(SECONDARY_COLOR, 1));
             valueCell.setBorderTop(new SolidBorder(SECONDARY_COLOR, 1));
             
-            // Increase font size for grand total
-            labelCell.setFontSize(14);
-            valueCell.setFontSize(14);
+            // Slightly increase emphasis for grand total
         }
         
         table.addCell(labelCell);
@@ -425,60 +465,6 @@ public class QuotationPdfGenerationService {
         return table;
     }
 
-    private Table createMMCalculationTable(List<Map<String, Object>> calculations) {
-        Table table = new Table(new float[]{2, 2, 2, 2, 2})
-                .useAllAvailableWidth()
-                .setMarginTop(5);
-
-        // Add headers with styling
-        Stream.of("MM", "R.Feet", "Nos", "Sq. Meter", "Sq.Feet")
-                .forEach(title -> {
-                    Cell header = new Cell()
-                            .add(new Paragraph(title))
-                            .setBackgroundColor(PRIMARY_COLOR)
-                            .setFontColor(TEXT_LIGHT)
-                            .setBold()
-                            .setPadding(5);
-                    table.addHeaderCell(header);
-                });
-
-        // Add data rows with better color coordination
-        for (Map<String, Object> calc : calculations) {
-            BigDecimal mm = toBigDecimal(calc.get("mm"));
-            BigDecimal meter = mm.divide(MM_TO_METER, 4, RoundingMode.HALF_UP);
-            BigDecimal sqFeet = toBigDecimal(calc.get("sqFeet"));
-
-            // MM column
-            table.addCell(new Cell()
-                    .add(new Paragraph(formatValue(calc.get("mm"))))
-                    .setBackgroundColor(PRIMARY_LIGHT));
-
-            // R.Feet column
-            table.addCell(new Cell()
-                    .add(new Paragraph(formatValue(calc.get("runningFeet"))))
-                    .setBackgroundColor(SECONDARY_LIGHT)
-                    .setFontColor(TEXT_LIGHT));
-
-            // Nos column
-            table.addCell(new Cell()
-                    .add(new Paragraph(formatValue(calc.get("nos"))))
-                    .setBackgroundColor(PRIMARY_LIGHT));
-
-            // Sq. Meter column
-            table.addCell(new Cell()
-                    .add(new Paragraph(formatValue(meter)))
-                    .setBackgroundColor(SECONDARY_LIGHT)
-                    .setFontColor(TEXT_LIGHT));
-
-            // Sq. Feet column
-            table.addCell(new Cell()
-                    .add(new Paragraph(formatValue(sqFeet)))
-                    .setBackgroundColor(PRIMARY_LIGHT));
-        }
-
-        return table;
-    }
-
     private String formatValue(Object value) {
         return value != null ? value.toString() : "0";
     }
@@ -490,21 +476,21 @@ public class QuotationPdfGenerationService {
 
     private void addBankDetailsAndTerms(Document document) {
         // Start new page
-        document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
+//        document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
 
         // Add styled section title
-        Table titleTable = new Table(1).useAllAvailableWidth();
-        Cell titleCell = new Cell()
-                .add(new Paragraph("PAYMENT & TERMS")
-                        .setFontSize(20)
-                        .setBold()
-                        .setFontColor(TEXT_LIGHT))
-                .setBackgroundColor(SECONDARY_COLOR)
-                .setPadding(10)
-                .setTextAlignment(TextAlignment.CENTER);
-        titleTable.addCell(titleCell);
-        document.add(titleTable);
-        document.add(new Paragraph("\n"));
+//        Table titleTable = new Table(1).useAllAvailableWidth();
+//        Cell titleCell = new Cell()
+//                .add(new Paragraph("PAYMENT & TERMS")
+//                        .setFontSize(10)
+//                        .setBold()
+//                        .setFontColor(TEXT_LIGHT))
+//                .setBackgroundColor(SECONDARY_COLOR)
+//                .setPadding(10)
+//                .setTextAlignment(TextAlignment.CENTER);
+//        titleTable.addCell(titleCell);
+//        document.add(titleTable);
+//        document.add(new Paragraph("\n"));
 
         // GST Number with styling
         Table gstTable = new Table(1).useAllAvailableWidth();
@@ -521,67 +507,45 @@ public class QuotationPdfGenerationService {
         document.add(new Paragraph("\n"));*/
 
         // Bank Details Section with styling
-        Table bankHeaderTable = new Table(1).useAllAvailableWidth();
-        Cell bankHeaderCell = new Cell()
-                .add(new Paragraph("BANK DETAILS")
-                        .setFontColor(TEXT_LIGHT)
-                        .setBold()
-                        .setFontSize(14))
-                .setBackgroundColor(PRIMARY_COLOR)
-                .setPadding(8)
-                .setTextAlignment(TextAlignment.CENTER);
-        bankHeaderTable.addCell(bankHeaderCell);
-        document.add(bankHeaderTable);
-        
-        // Create a table with 2 columns for bank details and payment image
-        Table bankDetailsTable = new Table(2).useAllAvailableWidth();
-        bankDetailsTable.setMarginTop(10);
-        
-        // Left column - Bank details
-        Cell bankDetailsCell = new Cell().setBorder(new SolidBorder(SECONDARY_COLOR, 1));
-        Table bankTable = new Table(2).useAllAvailableWidth();
-        
-        addStyledBankDetail(bankTable, "GST: ", "24AAMFJ9388A1Z4");
-        addStyledBankDetail(bankTable, "BANK: ", "ICICI INDIA");
-        addStyledBankDetail(bankTable, "A/C NAME:", "JK INDUSTIES");
-        addStyledBankDetail(bankTable, "A/C NO:", "820205000035");
-        addStyledBankDetail(bankTable, "IFSC CODE:", "ICIC0006248/ ICIC0008202");
-        addStyledBankDetail(bankTable, "BRANCH:", "RAJKOT");
-        addStyledBankDetail(bankTable, "UPI:", "MSJKINDUSTRIES.eazypay3@icici");
-
-        bankDetailsCell.add(bankTable);
-        bankDetailsCell.setBackgroundColor(BACKGROUND_LIGHT);
-        bankDetailsCell.setPadding(10);
-        
-        // Right column - Payment image
-        Cell paymentImageCell = new Cell().setBorder(new SolidBorder(SECONDARY_COLOR, 1));
-        paymentImageCell.setPadding(10);
-        
-        try {
-            InputStream imageStream = getClass().getClassLoader().getResourceAsStream("quotation/payment.jpg");
-            if (imageStream == null) {
-                log.error("Image not found: quotation/payment.jpg");
-                throw new FileNotFoundException("Image not found: quotation/payment.jpg");
-            }
-            
-            ImageData imageData = ImageDataFactory.create(imageStream.readAllBytes());
-            Image img = new Image(imageData);
-            img.setAutoScale(true);
-            img.setHorizontalAlignment(HorizontalAlignment.CENTER);
-            
-            paymentImageCell.add(img);
-        } catch (Exception e) {
-            log.error("Error loading payment image: quotation/payment.jpg", e);
-            paymentImageCell.add(new Paragraph("Payment Image Not Available")
-                    .setFontColor(PRIMARY_COLOR)
-                    .setTextAlignment(TextAlignment.CENTER));
-        }
-        
-        // Add cells to table
-        bankDetailsTable.addCell(bankDetailsCell);
-        bankDetailsTable.addCell(paymentImageCell);
-        
-        document.add(bankDetailsTable);
+//        Table bankHeaderTable = new Table(1).useAllAvailableWidth();
+//        Cell bankHeaderCell = new Cell()
+//                .add(new Paragraph("BANK DETAILS")
+//                        .setFontColor(TEXT_LIGHT)
+//                        .setBold()
+//                        .setFontSize(10))
+//                .setBackgroundColor(PRIMARY_COLOR)
+//                .setPadding(8)
+//                .setTextAlignment(TextAlignment.CENTER);
+//        bankHeaderTable.addCell(bankHeaderCell);
+//        document.add(bankHeaderTable);
+//
+//        // Create a table with 2 columns for bank details and payment image
+//        Table bankDetailsTable = new Table(2).useAllAvailableWidth();
+//        bankDetailsTable.setMarginTop(10);
+//
+//        // Left column - Bank details
+//        Cell bankDetailsCell = new Cell().setBorder(new SolidBorder(SECONDARY_COLOR, 1));
+//        Table bankTable = new Table(2).useAllAvailableWidth();
+//
+//        addStyledBankDetail(bankTable, "GST: ", "24DMAPP6011D1ZL");
+//        addStyledBankDetail(bankTable, "BANK: ", "");
+//        addStyledBankDetail(bankTable, "A/C NAME:", "SEVERAL INDUSTRIES");
+//        addStyledBankDetail(bankTable, "A/C NO:", "");
+//        addStyledBankDetail(bankTable, "IFSC CODE:", "");
+//        addStyledBankDetail(bankTable, "BRANCH:", "RAJKOT");
+//        addStyledBankDetail(bankTable, "UPI:", "");
+//
+//        bankDetailsCell.add(bankTable);
+//        bankDetailsCell.setBackgroundColor(BACKGROUND_LIGHT);
+//        bankDetailsCell.setPadding(10);
+//
+//        // Add only bank detail cell (removed payment image as requested)
+//        bankDetailsTable.addCell(bankDetailsCell);
+//        // Add an empty placeholder cell to keep layout tidy
+//        bankDetailsTable.addCell(new Cell().setBorder(new SolidBorder(SECONDARY_COLOR, 1))
+//                .add(new Paragraph(" ")).setBackgroundColor(BACKGROUND_LIGHT));
+//
+//        document.add(bankDetailsTable);
 
         // Terms and Conditions Section with styling
         document.add(new Paragraph("\n"));
@@ -590,27 +554,25 @@ public class QuotationPdfGenerationService {
                 .add(new Paragraph("TERMS AND CONDITIONS")
                         .setFontColor(TEXT_LIGHT)
                         .setBold()
-                        .setFontSize(14))
+                        .setFontSize(10))
                 .setBackgroundColor(PRIMARY_COLOR)
-                .setPadding(8)
+                .setPadding(2)
                 .setTextAlignment(TextAlignment.CENTER);
         termsHeaderTable.addCell(termsHeaderCell);
         document.add(termsHeaderTable);
-        document.add(new Paragraph("\n"));
 
-        // Terms in a styled box
-        Table termsTable = new Table(1).useAllAvailableWidth();
+        // Compact terms: small bullets, tight line height
+        Table termsTable = new Table(new float[]{1}).useAllAvailableWidth();
         Cell termsCell = new Cell()
                 .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
                 .setBackgroundColor(BACKGROUND_LIGHT)
-                .setPadding(15);
-        
-        // Add individual terms with styling
-        addPremiumTerm(termsCell, "1", "Customer will be billed after indicating acceptance of this quote.");
-        addPremiumTerm(termsCell, "2", "Payment 50% Advance And 50% before goods Dispatched.");
-        addPremiumTerm(termsCell, "3", "Transport Transaction Extra");
-        addPremiumTerm(termsCell, "4", "SUBJECT TO RAJKOT JURISDICTION.");
-        
+                .setPadding(2);
+
+        addCompactTerm(termsCell, "Customer will be billed after indicating acceptance of this quote.");
+        addCompactTerm(termsCell, "Payment 50% Advance and 50% before goods dispatched.");
+        addCompactTerm(termsCell, "Transport transaction extra.");
+        addCompactTerm(termsCell, "Subject to Rajkot jurisdiction.");
+
         termsTable.addCell(termsCell);
         document.add(termsTable);
     }
@@ -619,13 +581,15 @@ public class QuotationPdfGenerationService {
         Cell labelCell = new Cell()
                 .add(new Paragraph(label)
                         .setBold()
-                        .setFontColor(SECONDARY_COLOR))
+                        .setFontColor(SECONDARY_COLOR)
+                        .setFontSize(8))
                 .setBorder(Border.NO_BORDER)
                 .setPadding(5);
                 
         Cell valueCell = new Cell()
                 .add(new Paragraph(value)
-                        .setFontColor(TEXT_DARK))
+                        .setFontColor(TEXT_DARK)
+                        .setFontSize(8))
                 .setBorder(Border.NO_BORDER)
                 .setPadding(5);
                 
@@ -661,33 +625,20 @@ public class QuotationPdfGenerationService {
         container.add(new Paragraph("\n").setFontSize(5)); // Small spacing between terms
     }
 
-    private void addLastPage(Document document) {
-        // Start new page
-        document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
-
-        try {
-            InputStream imageStream = getClass().getClassLoader().getResourceAsStream("quotation/Quotation_last_page.jpg");
-            if (imageStream == null) {
-                throw new FileNotFoundException("Image not found: quotation/Quotation_last_page.jpg");
-            }
-            ImageData imageData = ImageDataFactory.create(imageStream.readAllBytes());
-            Image img = new Image(imageData);
-
-            // Get page dimensions
-            float pageWidth = document.getPdfDocument().getDefaultPageSize().getWidth();
-            float pageHeight = document.getPdfDocument().getDefaultPageSize().getHeight();
-    
-            // Set image to fill the entire page
-            img.setFixedPosition(0, 0);  // Start from top-left corner
-            img.scaleToFit(pageWidth, pageHeight);
-            img.setMargins(0, 0, 0, 0);  // Remove all margins
-    
-            document.add(img);
-        } catch (Exception e) {
-            log.error("Error loading last page image", e);
-            e.printStackTrace();
-        }
+    private void addCompactTerm(Cell container, String content) {
+        Table row = new Table(new float[]{0.4f, 12f}).useAllAvailableWidth();
+        Cell bullet = new Cell().setBorder(Border.NO_BORDER)
+                .setPadding(0)
+                .add(new Paragraph("•").setFontColor(PRIMARY_COLOR).setBold().setFontSize(9));
+        Cell text = new Cell().setBorder(Border.NO_BORDER)
+                .setPaddingTop(0).setPaddingBottom(2).setPaddingLeft(2)
+                .add(new Paragraph(content).setFontSize(9).setFontColor(TEXT_DARK));
+        row.addCell(bullet);
+        row.addCell(text);
+        container.add(row);
     }
+
+    // Removed decorative last page method as per request
     
     private void addPageFooter(PdfDocument pdfDoc, Document document, int pageNumber) {
         float footerY = 20;  // Distance from bottom
@@ -696,10 +647,10 @@ public class QuotationPdfGenerationService {
         // Create styled footer with background
         Table footerBgTable = new Table(1)
                 .useAllAvailableWidth()
-                .setFixedPosition(36, footerY - 10, pageWidth - 72);
+                .setFixedPosition(36, footerY - 6, pageWidth - 72);
                 
         Cell footerBgCell = new Cell()
-                .setHeight(30)
+                .setHeight(20)
                 .setBackgroundColor(SECONDARY_COLOR)
                 .setBorder(Border.NO_BORDER);
         footerBgTable.addCell(footerBgCell);
@@ -719,16 +670,16 @@ public class QuotationPdfGenerationService {
                 
         // Center - Contact information
         Cell contactCell = new Cell()
-                .add(new Paragraph("JK Industies [ CONTACT NO. 9979032430 ]")
-                        .setFontSize(8)
+                .add(new Paragraph("Several Polymers [ Mo. - 7490044572 ]")
+                        .setFontSize(7)
                         .setFontColor(TEXT_LIGHT))
                 .setBorder(Border.NO_BORDER)
                 .setTextAlignment(TextAlignment.LEFT);
                 
         // Right - Website or additional info
         Cell websiteCell = new Cell()
-                .add(new Paragraph("https://jkindustriesrajkot.com/")
-                        .setFontSize(8)
+                .add(new Paragraph("https://severalpolymers.in/")
+                        .setFontSize(7)
                         .setFontColor(TEXT_LIGHT))
                 .setBorder(Border.NO_BORDER)
                 .setTextAlignment(TextAlignment.RIGHT);
@@ -745,7 +696,8 @@ public class QuotationPdfGenerationService {
     // Helper method to convert HTML to formatted paragraph
     private Paragraph convertHtmlToParagraph(Map<String, Object> item, boolean isPrintImage) {
         Paragraph paragraph = new Paragraph();
-        String html = item.get("productName").toString();
+        Object rawName = item.get("productName");
+        String html = rawName != null ? rawName.toString() : "";
 
         // Remove any null or empty strings
         if (html == null || html.trim().isEmpty()) {
