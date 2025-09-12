@@ -48,6 +48,7 @@ public class CustomerDao {
                 c.id, c.name, c.gst, c.address, c.mobile,
                 c.remaining_payment_amount, c.next_action_date,
                 c.email, c.remarks, c.status,
+                c.reference_name,
                 c.created_at, c.updated_at
             FROM customer c
             WHERE c.client_id = :clientId
@@ -93,8 +94,9 @@ public class CustomerDao {
             customer.put("email", row[7]);
             customer.put("remarks", row[8]);
             customer.put("status", row[9]);
-            customer.put("createdAt", row[10]);
-            customer.put("updatedAt", row[11]);
+            customer.put("referenceName", row[10]);
+            customer.put("createdAt", row[11]);
+            customer.put("updatedAt", row[12]);
             customers.add(customer);
         }
 
@@ -116,7 +118,8 @@ public class CustomerDao {
                 c.id,
                 c.name,
                 c.address,
-                c.mobile
+                c.mobile,
+                c.reference_name
             FROM customer c
             WHERE c.status = 'A' AND c.client_id = :clientId
         """);
@@ -145,6 +148,7 @@ public class CustomerDao {
             customer.put("name", row[1]);
             customer.put("address", row[2]);
             customer.put("mobile", row[3]);
+            customer.put("referenceName", row[4]);
             customers.add(customer);
         }
         

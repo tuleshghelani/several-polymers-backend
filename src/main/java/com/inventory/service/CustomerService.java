@@ -164,6 +164,7 @@ public class CustomerService {
         customer.setNextActionDate(dto.getNextActionDate());
         customer.setEmail(dto.getEmail());
         customer.setRemarks(dto.getRemarks());
+        customer.setReferenceName(dto.getReferenceName());
         customer.setStatus(dto.getStatus() != null ? dto.getStatus() : "A");
     }
 
@@ -178,6 +179,7 @@ public class CustomerService {
         dto.setNextActionDate(customer.getNextActionDate());
         dto.setEmail(customer.getEmail());
         dto.setRemarks(customer.getRemarks());
+        dto.setReferenceName(customer.getReferenceName());
         dto.setStatus(customer.getStatus());
         dto.setClientId(customer.getClient().getId());
         return dto;

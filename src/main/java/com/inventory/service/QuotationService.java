@@ -105,6 +105,7 @@ public class QuotationService {
             quotation.setTermsConditions(request.getTermsConditions());
             quotation.setContactNumber(request.getContactNumber());
             quotation.setAddress(request.getAddress());
+            quotation.setReferenceName(request.getReferenceName());
             // New fields
             if (request.getTransportMasterId() != null) {
                 TransportMaster transportMaster = transportMasterRepository.findById(request.getTransportMasterId())
@@ -409,6 +410,7 @@ public class QuotationService {
             quotation.setTransportMaster(null);
         }
         quotation.setCaseNumber(request.getCaseNumber());
+        quotation.setReferenceName(request.getReferenceName());
         quotation.setUpdatedAt(OffsetDateTime.now());
         quotation.setUpdatedBy(currentUser);
     }
@@ -452,6 +454,7 @@ public class QuotationService {
             response.put("status", quotation.getStatus());
             response.put("remarks", quotation.getRemarks());
             response.put("termsConditions", quotation.getTermsConditions());
+            response.put("referenceName", quotation.getReferenceName());
             response.put("customerName", quotation.getCustomerName());
             response.put("customerId", quotation.getCustomer() != null ? quotation.getCustomer().getId() : null);
             response.put("contactNumber", quotation.getContactNumber());

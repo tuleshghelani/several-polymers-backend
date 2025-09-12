@@ -62,6 +62,9 @@ public class Quotation {
 
     @Column(name = "address", columnDefinition="varchar")
     private String address;
+    
+    @Column(name = "reference_name", length = 256)
+    private String referenceName;
 
     @Column(name = "quote_date", nullable = false, columnDefinition = "DATE")
     private LocalDate quoteDate = LocalDate.now();

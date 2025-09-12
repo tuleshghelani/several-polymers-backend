@@ -30,7 +30,7 @@ public class QuotationRequestDto {
     private Long transportMasterId;
     private String caseNumber;
     private BigDecimal packagingAndForwadingCharges;
-
+    private String referenceName;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate quoteDate;

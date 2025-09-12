@@ -62,6 +62,9 @@ public class Customer {
     @Column(name = "remarks", length = 1000)
     private String remarks;
     
+    @Column(name = "reference_name", length = 256)
+    private String referenceName;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_customer_client_id_client_id"))
     private Client client;

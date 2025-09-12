@@ -178,10 +178,11 @@ public class QuotationPdfGenerationService {
         // Row 1: Quote Number | Quote Date
         addDetailPair(detailsTable,
                 "Quote Number", formatValue(data.get("quoteNumber")),
-                "Quote Date", formatValue(data.get("quoteDate")));
+                "Quote Date", formatValue(data.get("quoteDate")),
+                "Reference Name", formatValue(data.get("referenceName")));
 
         // Row 2: Valid Until | Mobile No.
-        addDetailPair(detailsTable,
+        addTwoDetailPair(detailsTable,
                 "Valid Until", formatValue(data.get("validUntil")),
                 "Mobile No.", formatValue(data.get("contactNumber")));
         
@@ -225,7 +226,24 @@ public class QuotationPdfGenerationService {
         table.addCell(valueCell);
     }
 
-    private void addDetailPair(Table table, String label1, String value1, String label2, String value2) {
+    private void addDetailPair(Table table, String label1, String value1, String label2, String value2, String label3, String value3) {
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(label1 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(value1).setFontSize(7).setFontColor(TEXT_DARK)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(label2 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(value2).setFontSize(9).setFontColor(TEXT_DARK)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(label3 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(value3).setFontSize(9).setFontColor(TEXT_DARK)));
+    }
+
+    
+
+    private void addTwoDetailPair(Table table, String label1, String value1, String label2, String value2) {
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label1 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
