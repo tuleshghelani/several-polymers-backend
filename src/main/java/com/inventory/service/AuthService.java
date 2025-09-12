@@ -44,7 +44,7 @@ public class AuthService {
         return userRepository.save(userMaster);
     }
 
-    public Map<String, String> login(LoginRequest request) throws ValidationException {
+    public Map<String, Object> login(LoginRequest request) throws ValidationException {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -63,12 +63,14 @@ public class AuthService {
             user.setUpdatedAt(OffsetDateTime.now());
             userRepository.save(user);
 
-            Map<String, String> tokens = new HashMap<>();
+            Map<String, Object> tokens = new HashMap<>();
             tokens.put("accessToken", token);
             tokens.put("refreshToken", refreshToken);
             tokens.put("firstName", user.getFirstName());
             tokens.put("lastName", user.getLastName());
             tokens.put("email", user.getEmail());
+            tokens.put("id", user.getId().toString());
+            tokens.put("role", user.getRoles());
             
             return tokens;
         } catch (ValidationException ve) {

@@ -281,8 +281,12 @@ public class QuotationService {
         item.setWeightPerRoll(itemDto.getWeightPerRoll() != null ? itemDto.getWeightPerRoll() : BigDecimal.ZERO);
         item.setRemarks(itemDto.getRemarks());
         // New fields
-        item.setProduction(Boolean.TRUE.equals(itemDto.getIsProduction()));
-        item.setQuotationItemStatus(itemDto.getQuotationItemStatus());
+        if(itemDto.getIsProduction() != null){
+            item.setIsProduction(itemDto.getIsProduction());
+        }
+        if(itemDto.getQuotationItemStatus()!=null){
+            item.setQuotationItemStatus(itemDto.getQuotationItemStatus());
+        }
 
         // Calculate price components
         BigDecimal subTotal = itemDto.getUnitPrice().multiply(itemDto.getQuantity())

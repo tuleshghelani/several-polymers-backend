@@ -87,6 +87,9 @@ public class QuotationItem {
     @Column(name = "number_of_roll", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
     private Integer numberOfRoll = 0;
 
+    @Column(name = "created_roll", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    private Integer createdRoll = 0;
+
     @Column(name = "weight_per_roll", precision = 19, scale = 3, columnDefinition = "NUMERIC(19, 3) DEFAULT 0.000")
     private BigDecimal weightPerRoll = BigDecimal.ZERO;
 
@@ -94,7 +97,7 @@ public class QuotationItem {
     private String remarks;
 
     @Column(name = "is_production", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private boolean isProduction = false;
+    private Boolean isProduction = false;
 
     @Column(name = "quotation_item_status", length = 4)
     private String quotationItemStatus;
