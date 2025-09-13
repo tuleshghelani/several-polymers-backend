@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -19,9 +20,19 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        UserMaster userMaster = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ValidationException("User not found", HttpStatus.UNAUTHORIZED));
+    public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
+        // Try phoneNumber first, then email
+        UserMaster userMaster = null;        
+        userMaster = userRepository.findByPhoneNumber(identifier).orElse(null);
+        
+        // If not found by phoneNumber, try email
+        if (userMaster == null) {
+            userMaster = userRepository.findByEmail(identifier).orElse(null);
+        }
+        
+        if (userMaster == null) {
+            throw new ValidationException("User not found", HttpStatus.UNAUTHORIZED);
+        }
 
         return UserPrincipal.create(userMaster);
     }

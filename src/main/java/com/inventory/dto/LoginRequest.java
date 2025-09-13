@@ -11,6 +11,7 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginRequest {
     private String email;
+    private String phoneNumber;
     private String password;
     private Long clientId;
 }

@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -32,10 +33,10 @@ import org.hibernate.annotations.Type;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "\"user_master\"", indexes = {
-    @Index(name = "idx_user_master_email", columnList = "email"),
+    @Index(name = "idx_user_master_phone_number", columnList = "phone_number"),
     @Index(name = "idx_user_master_client_id", columnList = "client_id")
 }, uniqueConstraints={
-        @UniqueConstraint( name = "uk_user_master_email",  columnNames ={"email"})
+        @UniqueConstraint( name = "uk_user_master_phone_number",  columnNames ={"phone_number"})
 })
 public class UserMaster {
     @Id
@@ -66,6 +67,9 @@ public class UserMaster {
     
     @Column(name = "email", length = 64)
     private String email;
+
+    @Column(name = "phone_number", length = 64)
+    private String phoneNumber;
     
     @Column(name = "refresh_token", length = 64)
     private String refreshToken;
@@ -86,4 +90,9 @@ public class UserMaster {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_user_master_client_id_client_id"))
     private Client client;
+    
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = OffsetDateTime.now();
+    }
 }

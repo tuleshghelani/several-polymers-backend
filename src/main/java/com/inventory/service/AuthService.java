@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.inventory.dto.LoginRequest;
 import com.inventory.dto.RegisterRequest;
@@ -32,30 +33,66 @@ public class AuthService {
 
     @Transactional
     public UserMaster register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+        // Use phoneNumber if provided, otherwise fallback to email
+        String identifier = StringUtils.hasText(request.getPhoneNumber()) ? 
+            request.getPhoneNumber() : request.getEmail();
+        
+        if (!StringUtils.hasText(identifier)) {
+            throw new ValidationException("Phone number or email is required", HttpStatus.BAD_REQUEST);
+        }
+        
+        // Check if user already exists by phoneNumber or email
+        if (StringUtils.hasText(request.getPhoneNumber()) && 
+            userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new ValidationException("User with this phone number already exists", HttpStatus.BAD_REQUEST);
+        }
+        
+        if (StringUtils.hasText(request.getEmail()) && 
+            userRepository.existsByEmail(request.getEmail())) {
+            throw new ValidationException("User with this email already exists", HttpStatus.BAD_REQUEST);
         }
 
         UserMaster userMaster = new UserMaster();
+        userMaster.setPhoneNumber(request.getPhoneNumber());
         userMaster.setEmail(request.getEmail());
         userMaster.setPassword(passwordEncoder.encode(request.getPassword()));
         userMaster.setFirstName(request.getFirstName());
         userMaster.setLastName(request.getLastName());
+        userMaster.setStatus(request.getStatus() != null ? request.getStatus() : "A");
+        userMaster.setRoles(request.getRoles() != null ? request.getRoles() : new java.util.ArrayList<>());
+
         return userRepository.save(userMaster);
     }
 
     public Map<String, Object> login(LoginRequest request) throws ValidationException {
         try {
+            // Use phoneNumber if provided, otherwise fallback to email
+            String identifier = StringUtils.hasText(request.getPhoneNumber()) ? 
+                request.getPhoneNumber() : request.getEmail();
+            
+            if (!StringUtils.hasText(identifier)) {
+                throw new ValidationException("Phone number or email is required", HttpStatus.BAD_REQUEST);
+            }
+            
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(identifier, request.getPassword())
             );
 
             String token = tokenProvider.generateToken(authentication);
             String refreshToken = UUID.randomUUID().toString();
 
-            // Save tokens to database
-            UserMaster user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+            // Find user by phoneNumber first, then by email
+            UserMaster user = null;
+            if (StringUtils.hasText(request.getPhoneNumber())) {
+                user = userRepository.findByPhoneNumber(request.getPhoneNumber()).orElse(null);
+            }
+            if (user == null && StringUtils.hasText(request.getEmail())) {
+                user = userRepository.findByEmail(request.getEmail()).orElse(null);
+            }
+            
+            if (user == null) {
+                throw new ValidationException("Invalid credentials", HttpStatus.UNAUTHORIZED);
+            }
             
             user.setJwtToken(token);
             user.setRefreshToken(refreshToken);
@@ -68,17 +105,16 @@ public class AuthService {
             tokens.put("refreshToken", refreshToken);
             tokens.put("firstName", user.getFirstName());
             tokens.put("lastName", user.getLastName());
+            tokens.put("phoneNumber", user.getPhoneNumber());
             tokens.put("email", user.getEmail());
             tokens.put("id", user.getId().toString());
             tokens.put("role", user.getRoles());
             
             return tokens;
         } catch (ValidationException ve) {
-            ve.printStackTrace();
             throw ve;
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new ValidationException(e.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new ValidationException("Invalid credentials", HttpStatus.UNAUTHORIZED);
         }
     }
 }
