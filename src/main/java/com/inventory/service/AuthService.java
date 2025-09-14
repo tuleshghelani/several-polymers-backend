@@ -3,6 +3,7 @@ package com.inventory.service;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -92,6 +93,10 @@ public class AuthService {
             
             if (user == null) {
                 throw new ValidationException("Invalid credentials", HttpStatus.UNAUTHORIZED);
+            }
+
+            if(!Objects.equals("A", user.getStatus())) {
+                throw new ValidationException("User not active", HttpStatus.UNAUTHORIZED);
             }
             
             user.setJwtToken(token);

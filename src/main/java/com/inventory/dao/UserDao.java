@@ -7,6 +7,8 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +19,33 @@ import java.util.Map;
 public class UserDao {
     @PersistenceContext
     private EntityManager entityManager;
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    private List<String> parseRolesFromJson(Object rolesObj) {
+        if (rolesObj == null) {
+            return new ArrayList<>();
+        }
+        
+        try {
+            if (rolesObj instanceof String) {
+                String rolesJson = (String) rolesObj;
+                if (rolesJson.trim().isEmpty() || "[]".equals(rolesJson.trim())) {
+                    return new ArrayList<>();
+                }
+                return objectMapper.readValue(rolesJson, new TypeReference<List<String>>() {});
+            } else if (rolesObj instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<String> rolesList = (List<String>) rolesObj;
+                return rolesList;
+            }
+        } catch (Exception e) {
+            // If parsing fails, return empty list
+            return new ArrayList<>();
+        }
+        
+        return new ArrayList<>();
+    }
 
     public Map<String, Object> searchUsers(RegisterRequest dto) {
         StringBuilder countSql = new StringBuilder();
@@ -89,7 +118,7 @@ public class UserDao {
             user.put("phoneNumber", row[3]);
             user.put("email", row[4]);
             user.put("status", row[5]);
-            user.put("roles", row[6]);
+            user.put("roles", parseRolesFromJson(row[6]));
             user.put("createdAt", row[7]);
             user.put("updatedAt", row[8]);
             user.put("clientId", row[9]);
@@ -138,7 +167,7 @@ public class UserDao {
         user.put("phoneNumber", result[index++]);
         user.put("email", result[index++]);
         user.put("status", result[index++]);
-        user.put("roles", result[index++]);
+        user.put("roles", parseRolesFromJson(result[index++]));
         user.put("createdAt", result[index++]);
         user.put("updatedAt", result[index++]);
         user.put("clientId", result[index++]);
