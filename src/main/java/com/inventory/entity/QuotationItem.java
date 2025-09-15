@@ -30,7 +30,9 @@ import lombok.Setter;
         @Index(name = "idx_quotation_items_quotation_id", columnList = "quotation_id"),
         @Index(name = "idx_quotation_items_product_id", columnList = "product_id"),
         @Index(name = "idx_quotation_items_client_id", columnList = "client_id"),
-        @Index(name = "idx_quotation_items_brand_id", columnList = "brand_id")
+        @Index(name = "idx_quotation_items_brand_id", columnList = "brand_id"),
+        @Index(name = "idx_quotation_items_is_production", columnList = "is_production"),
+        @Index(name = "idx_quotation_items_quotation_item_status", columnList = "quotation_item_status")
 })
 public class QuotationItem {
     @Id

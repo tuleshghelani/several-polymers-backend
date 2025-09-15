@@ -24,6 +24,7 @@ import com.inventory.dao.QuotationDao;
 import com.inventory.dto.ApiResponse;
 import com.inventory.dto.QuotationDto;
 import com.inventory.enums.QuotationStatus;
+import com.inventory.enums.QuotationStatusItem;
 import com.inventory.exception.ValidationException;
 import com.inventory.repository.CustomerRepository;
 import com.inventory.repository.BrandRepository;
@@ -387,10 +388,13 @@ public class QuotationService {
         if (!item.getClient().getId().equals(currentUser.getClient().getId())) {
             throw new ValidationException("Unauthorized access to quotation item");
         }
-        int updated = quotationItemRepository.updateIsProductionById(item.getId(), request.getIsProduction());
-        if (updated == 0) {
-            throw new ValidationException("Failed to update quotation item production flag");
+        item.setIsProduction(request.getIsProduction());
+        if(request.getIsProduction()) {
+            item.setQuotationItemStatus(QuotationStatusItem.O.value);
+        } else {
+            item.setQuotationItemStatus(null);
         }
+        quotationItemRepository.save(item);
         return ApiResponse.success("Quotation item production flag updated successfully");
     }
 
