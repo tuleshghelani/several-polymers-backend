@@ -11,16 +11,18 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.inventory.dto.request.QuotationItemRequestDto;
+import com.inventory.dto.request.QuotationItemCreatedRollUpdateDto;
 import com.inventory.dto.request.QuotationItemProductionUpdateDto;
 import com.inventory.dto.request.QuotationItemStatusUpdateDto;
 import com.inventory.dto.request.QuotationRequestDto;
-import com.inventory.dto.request.QuotationStatusUpdateDto;
+import com.inventory.dto.request.QuotationItemRequestDto;
 import com.inventory.entity.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.inventory.dao.QuotationDao;
+import com.inventory.dao.QuotationItemDao;
 import com.inventory.dto.ApiResponse;
 import com.inventory.dto.QuotationDto;
 import com.inventory.enums.QuotationStatus;
@@ -64,6 +66,7 @@ public class QuotationService {
     private final ProductRepository productRepository;
     private final UtilityService utilityService;
     private final QuotationDao quotationDao;
+    private final QuotationItemDao quotationItemDao;
     private final QuoteNumberGeneratorService quoteNumberGeneratorService;
     private final PdfGenerationService pdfGenerationService;
     private final QuotationPdfGenerationService quotationPdfGenerationService;
@@ -165,6 +168,48 @@ public class QuotationService {
             e.printStackTrace();
             log.error("Error creating quotation", e);
             throw new ValidationException("Failed to create quotation: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public ApiResponse<?> updateQuotationItemCreatedRoll(QuotationItemCreatedRollUpdateDto request) {
+        try {
+            if (request.getId() == null) {
+                throw new ValidationException("Quotation item id is required");
+            }
+            if (request.getCreatedRoll() == null || request.getCreatedRoll() < 0) {
+                throw new ValidationException("createdRoll must be zero or positive");
+            }
+
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            QuotationItem item = quotationItemRepository.findById(request.getId())
+                    .orElseThrow(() -> new ValidationException("Quotation item not found"));
+
+            if (!item.getClient().getId().equals(currentUser.getClient().getId())) {
+                throw new ValidationException("Unauthorized access to quotation item");
+            }
+
+            int updated = quotationItemRepository.updateCreatedRollById(request.getId(), request.getCreatedRoll());
+            if (updated == 0) {
+                throw new ValidationException("Failed to update createdRoll");
+            }
+
+            return ApiResponse.success("Created roll updated successfully");
+        } catch (ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ValidationException("Failed to update created roll: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<Map<String, Object>> searchQuotationItems(QuotationItemRequestDto dto) {
+        try {
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            Map<String, Object> result = quotationItemDao.search(dto, currentUser.getClient().getId());
+            return ApiResponse.success("Quotation items retrieved successfully", result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ValidationException("Failed to search quotation items: " + e.getMessage());
         }
     }
 
@@ -373,6 +418,9 @@ public class QuotationService {
             throw new ValidationException("Unauthorized access to quotation item");
         }
         String status = request.getQuotationItemStatus();
+        if(status.equals(item.getQuotationItemStatus())) {
+            throw new ValidationException("Quotation item status is already " + status);
+        }
         int updated = quotationItemRepository.updateQuotationItemStatusById(item.getId(), status);
         if (updated == 0) {
             throw new ValidationException("Failed to update quotation item status");
@@ -522,7 +570,7 @@ public class QuotationService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ApiResponse<?> updateQuotationStatus(QuotationStatusUpdateDto request) {
+    public ApiResponse<?> updateQuotationStatus(QuotationItemRequestDto request) {
         try {
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
             Quotation quotation = quotationRepository.findById(request.getId())

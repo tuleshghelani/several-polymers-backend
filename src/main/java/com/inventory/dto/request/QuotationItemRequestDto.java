@@ -15,6 +15,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class QuotationItemRequestDto {
+    // Common identifiers and status (also used by quotation status update)
+    private Long id;
+    private String status;
     private Long productId;
     private Long brandId;
     private String productType;
@@ -34,4 +37,10 @@ public class QuotationItemRequestDto {
 //    private BigDecimal loadingCharge;
     private Boolean isProduction;
     private String quotationItemStatus;
+
+    // Search & pagination
+    private Integer page = 0;
+    private Integer size = 10;
+    private String sortBy = "id";
+    private String sortDir = "desc";
 }

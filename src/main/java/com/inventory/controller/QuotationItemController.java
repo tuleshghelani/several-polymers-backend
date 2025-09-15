@@ -2,6 +2,8 @@ package com.inventory.controller;
 
 import com.inventory.dto.ApiResponse;
 import com.inventory.dto.request.QuotationItemProductionUpdateDto;
+import com.inventory.dto.request.QuotationItemCreatedRollUpdateDto;
+import com.inventory.dto.request.QuotationItemRequestDto;
 import com.inventory.dto.request.QuotationItemStatusUpdateDto;
 import com.inventory.service.QuotationService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,17 @@ public class QuotationItemController {
     public ResponseEntity<ApiResponse<?>> updateProduction(@RequestBody QuotationItemProductionUpdateDto request) {
         log.debug("Update quotation item production for ID: {}", request.getId());
         return ResponseEntity.ok(quotationService.updateQuotationItemProduction(request));
+    }
+
+    @PutMapping("/created-roll")
+    public ResponseEntity<ApiResponse<?>> updateCreatedRoll(@RequestBody QuotationItemCreatedRollUpdateDto request) {
+        log.debug("Update quotation item createdRoll for ID: {}", request.getId());
+        return ResponseEntity.ok(quotationService.updateQuotationItemCreatedRoll(request));
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<?>> search(@RequestBody QuotationItemRequestDto request) {
+        return ResponseEntity.ok(quotationService.searchQuotationItems(request));
     }
 }
 
