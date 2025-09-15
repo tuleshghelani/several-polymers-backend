@@ -7,6 +7,7 @@ import com.inventory.service.SaleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/sales")
@@ -40,5 +41,10 @@ public class SaleController {
     @PostMapping("/detail")
     public ResponseEntity<?> getSaleDetail(@RequestBody SaleDto request) {
         return ResponseEntity.ok(saleService.getSaleDetail(request));
+    }
+
+    @PostMapping("/createFromQuotationItems")
+    public ResponseEntity<ApiResponse<?>> createFromQuotationItems(@RequestBody SaleDto request) {
+        return ResponseEntity.ok(saleService.createSaleFromQuotationItems(request));
     }
 }

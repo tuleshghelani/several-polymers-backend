@@ -34,6 +34,9 @@ public class Client {
 
     @Column(name = "last_quote_number", columnDefinition = "BIGINT DEFAULT 0")
     private Long lastQuoteNumber = 0L;
+
+    @Column(name = "last_sales_bill_number", columnDefinition = "BIGINT DEFAULT 0")
+    private Long lastSalesBillNumber = 0L;
     
     @Column(name = "created_at", length = 29, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();

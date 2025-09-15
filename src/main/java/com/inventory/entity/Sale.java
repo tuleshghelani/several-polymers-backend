@@ -53,6 +53,11 @@ public class Sale {
     private OffsetDateTime updatedAt = OffsetDateTime.now();
     
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quotation_id", referencedColumnName = "id", 
+        foreignKey = @ForeignKey(name = "fk_sale_quotation_id_quotation_id"))
+    private Quotation quotation;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "id", 
         foreignKey = @ForeignKey(name = "fk_sale_created_by_user_master_id"))
     private UserMaster createdBy;

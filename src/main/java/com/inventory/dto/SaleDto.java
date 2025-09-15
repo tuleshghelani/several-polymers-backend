@@ -11,6 +11,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @Getter
@@ -48,4 +49,5 @@ public class SaleDto {
     private Date startDate;
     private Date endDate;
     private Boolean isBlack;
+    private List<Long> quotationItemIds;
 }

@@ -46,6 +46,11 @@ public class SaleItem {
     @Column(name = "final_price", nullable = false, precision = 19, scale = 2)
     private BigDecimal finalPrice;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quotation_item_id", referencedColumnName = "id", 
+        foreignKey = @ForeignKey(name = "fk_sale_items_quotation_item_id_quotation_item_id"))
+    private QuotationItem quotationItem;
+    
 //    @Column(name = "remaining_quantity", columnDefinition = "numeric(12,3) DEFAULT 0.000")
 //    private BigDecimal remainingQuantity = BigDecimal.ZERO;
 

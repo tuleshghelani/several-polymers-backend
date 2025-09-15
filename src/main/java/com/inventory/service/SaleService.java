@@ -10,9 +10,14 @@ import com.inventory.entity.Product;
 import com.inventory.entity.Sale;
 import com.inventory.entity.SaleItem;
 import com.inventory.entity.UserMaster;
+import com.inventory.entity.QuotationItem;
+import com.inventory.entity.Quotation;
+import com.inventory.enums.QuotationStatusItem;
 import com.inventory.exception.ValidationException;
 import com.inventory.repository.CustomerRepository;
 import com.inventory.repository.ProductRepository;
+import com.inventory.repository.QuotationItemRepository;
+import com.inventory.repository.QuotationRepository;
 import com.inventory.repository.SaleItemRepository;
 import com.inventory.repository.SaleRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +46,9 @@ public class SaleService {
     private final UtilityService utilityService;
     private final SaleDao saleDao;
     private final SaleItemRepository saleItemRepository;
+    private final QuotationItemRepository quotationItemRepository;
+    private final QuotationRepository quotationRepository;
+    private final SalesBillNumberGeneratorService salesBillNumberGeneratorService;
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> createSale(SaleRequestDto request) {
@@ -106,6 +114,109 @@ public class SaleService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ValidationException("Sale creation failed: " + e.getMessage());
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<?> createSaleFromQuotationItems(SaleDto request) {
+        try {
+            List<Long> quotationItemIds = request.getQuotationItemIds();
+            if (quotationItemIds == null || quotationItemIds.isEmpty()) {
+                throw new ValidationException("At least one quotation item id is required");
+            }
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+
+            // Load all quotation items
+            List<QuotationItem> quotationItems = quotationItemRepository.findAllById(quotationItemIds);
+            if (quotationItems.isEmpty()) {
+                throw new ValidationException("Quotation items not found");
+            }
+
+            // Ensure all belong to same client and same quotation
+            Long clientId = currentUser.getClient().getId();
+            Quotation parentQuotation = null;
+            for (QuotationItem qi : quotationItems) {
+                if (qi.getClient() == null || !qi.getClient().getId().equals(clientId)) {
+                    throw new ValidationException("Unauthorized access to quotation items");
+                }
+                if (parentQuotation == null) {
+                    parentQuotation = qi.getQuotation();
+                } else if (!parentQuotation.getId().equals(qi.getQuotation().getId())) {
+                    throw new ValidationException("All items must belong to the same quotation");
+                }
+            }
+            if (parentQuotation == null) {
+                throw new ValidationException("Parent quotation not found");
+            }
+
+            // Prepare Sale
+            Sale sale = new Sale();
+            sale.setCustomer(parentQuotation.getCustomer());
+            sale.setSaleDate(new java.util.Date());
+            sale.setIsBlack(false);
+            sale.setNumberOfItems(quotationItems.size());
+            sale.setClient(currentUser.getClient());
+            sale.setCreatedBy(currentUser);
+            sale.setQuotation(parentQuotation);
+
+            // Generate invoice number
+            String invoiceNumber = salesBillNumberGeneratorService.generateInvoiceNumber(currentUser.getClient());
+            sale.setInvoiceNumber(invoiceNumber);
+
+            sale = saleRepository.save(sale);
+
+            BigDecimal totalAmount = BigDecimal.ZERO;
+
+            for (QuotationItem qi : quotationItems) {
+                qi.setQuotationItemStatus(QuotationStatusItem.B.value);
+                quotationItemRepository.save(qi);
+
+                Product product = qi.getProduct();
+                SaleItem item = new SaleItem();
+                item.setSale(sale);
+                item.setProduct(product);
+                item.setQuantity(qi.getQuantity());
+                item.setRemarks(qi.getRemarks());
+                item.setUnitPrice(qi.getUnitPrice());
+                item.setFinalPrice(qi.getFinalPrice());
+                item.setQuotationItem(qi);
+                item.setClient(currentUser.getClient());
+
+                saleItemRepository.save(item);
+                totalAmount = totalAmount.add(item.getFinalPrice());
+
+                // Reduce product stock, since this is a sale
+                productQuantityService.updateProductQuantity(
+                        product.getId(),
+                        item.getQuantity(),
+                        false,
+                        true,
+                        null
+                );
+            }
+
+            totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
+            sale.setTotalSaleAmount(totalAmount);
+            sale.setUpdatedAt(OffsetDateTime.now());
+            saleRepository.save(sale);
+
+            // Update customer remaining payment amount (add sale amount)
+            if (sale.getCustomer() != null) {
+                customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
+                        sale.getCustomer().getId(),
+                        totalAmount,
+                        false,
+                        true
+                );
+            }
+
+            return ApiResponse.success("Sale created successfully from quotation items");
+        } catch (ValidationException ve) {
+            ve.printStackTrace();
+            throw ve;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ValidationException("Failed to create sale from quotation items: " + e.getMessage());
         }
     }
     
