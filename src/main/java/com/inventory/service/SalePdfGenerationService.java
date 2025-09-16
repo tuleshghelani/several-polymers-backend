@@ -149,10 +149,10 @@ public class SalePdfGenerationService {
                 "No.",
                 "Item Name",
                 "Quantity",
+                "Pcs",
+                "Weight per roll",
                 "Unit Price",
-                "Amount",
-                "GST",
-                "Total Amount"
+                "Amount"
         ).forEach(title -> table.addHeaderCell(
                 new Cell().add(new Paragraph(title).setFontSize(9))
                         .setBackgroundColor(SECONDARY_COLOR)
@@ -174,17 +174,18 @@ public class SalePdfGenerationService {
             BigDecimal amount = toBigDecimal(item.get("price"));
             BigDecimal gstAmount = toBigDecimal(item.get("taxAmount"));
             BigDecimal finalPrice = toBigDecimal(item.get("finalPrice"));
+            int numberOfRoll = item.get("numberOfRoll") != null ? ((Number) item.get("numberOfRoll")).intValue() : 0;
+            BigDecimal weightPerRoll = toBigDecimal(item.get("weightPerRoll"));
 
             table.addCell(new Cell().add(new Paragraph(String.valueOf(counter.getAndIncrement())).setFontSize(8)).setBackgroundColor(rowColor));
             table.addCell(new Cell().add(new Paragraph(formatValue(item.get("productName"))).setFontSize(8)).setBackgroundColor(rowColor));
             table.addCell(new Cell().add(new Paragraph(quantity.setScale(0, RoundingMode.DOWN).toString()).setFontSize(8)).setBackgroundColor(rowColor));
+            table.addCell(new Cell().add(new Paragraph(String.valueOf(numberOfRoll)).setFontSize(8)).setBackgroundColor(rowColor));
+            table.addCell(new Cell().add(new Paragraph(weightPerRoll.setScale(3, RoundingMode.HALF_UP).toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
             table.addCell(new Cell().add(new Paragraph(unitPrice.toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
             table.addCell(new Cell().add(new Paragraph(amount.setScale(2, RoundingMode.HALF_UP).toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
-            table.addCell(new Cell().add(new Paragraph(gstAmount.toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
-            table.addCell(new Cell().add(new Paragraph(finalPrice.setScale(2, RoundingMode.HALF_UP).toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
 
             subtotal = subtotal.add(amount);
-            totalTax = totalTax.add(gstAmount);
         }
 
         document.add(table);
@@ -197,9 +198,6 @@ public class SalePdfGenerationService {
 
         Cell totalsCell = new Cell();
         Table totalsTable = new Table(2).useAllAvailableWidth();
-
-        addTotalRow(totalsTable, "SUBTOTAL", subtotal.toPlainString() + "/-", false);
-        addTotalRow(totalsTable, "GST", totalTax.setScale(0, RoundingMode.HALF_UP).toPlainString() + "/-", false);
 
         BigDecimal grandTotal = subtotal.add(totalTax).setScale(0, RoundingMode.HALF_UP);
         addTotalRow(totalsTable, "GRAND TOTAL", grandTotal.toPlainString() + "/-", true);

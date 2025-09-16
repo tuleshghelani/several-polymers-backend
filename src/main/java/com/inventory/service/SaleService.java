@@ -182,6 +182,8 @@ public class SaleService {
                 item.setFinalPrice(qi.getFinalPrice());
                 item.setQuotationItem(qi);
                 item.setClient(currentUser.getClient());
+                item.setNumberOfRoll(qi.getNumberOfRoll());
+                item.setWeightPerRoll(qi.getWeightPerRoll());
 
                 saleItemRepository.save(item);
                 totalAmount = totalAmount.add(item.getFinalPrice());
@@ -245,6 +247,12 @@ public class SaleService {
         item.setRemarks(dto.getRemarks());
         item.setUnitPrice(dto.getUnitPrice().setScale(2, RoundingMode.HALF_UP));
 //        item.setDiscountPercentage(dto.getDiscountPercentage());
+        if (dto.getNumberOfRoll() != null) {
+            item.setNumberOfRoll(dto.getNumberOfRoll());
+        }
+        if (dto.getWeightPerRoll() != null) {
+            item.setWeightPerRoll(dto.getWeightPerRoll());
+        }
         
         // Calculate amounts with 2 decimal places
         BigDecimal subTotal = dto.getUnitPrice()
@@ -406,7 +414,6 @@ public class SaleService {
         existingSale.setNumberOfItems(request.getProducts().size());
         existingSale.setUpdatedBy(currentUser);
         existingSale.setUpdatedAt(OffsetDateTime.now());
-        
         // Process new items
         List<SaleItem> newItems = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;

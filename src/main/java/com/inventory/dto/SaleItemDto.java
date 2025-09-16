@@ -21,6 +21,7 @@ public class SaleItemDto {
     private Long clientId;
     private String remarks;
 //    private String coilNumber;
-
+    private Integer numberOfRoll;
+    private BigDecimal weightPerRoll;
 
 } 

@@ -128,7 +128,7 @@ public class SaleDao {
                 s.created_at, s.updated_at, s.customer_id, s.created_by, s.is_black,
                 si.id as item_id, si.quantity, si.unit_price, si.discount_percentage,
                 si.discount_amount, si.final_price, 
-                si.product_id, si.remarks
+                si.product_id, si.remarks, si.number_of_roll, si.weight_per_roll
             FROM (SELECT * FROM sale WHERE id = :saleId AND client_id = :clientId) s
             LEFT JOIN (SELECT * FROM sale_items si WHERE sale_id = :saleId) si ON s.id = si.sale_id
             WHERE s.id = :saleId
@@ -148,7 +148,8 @@ public class SaleDao {
                 s.id, s.invoice_number, s.sale_date, s.total_sale_amount,
                 c.name as customer_name, c.address, c.mobile, c.gst,
                 si.id as item_id, si.quantity, si.unit_price, si.discount_amount,
-                p.name as product_name, p.tax_percentage
+                p.name as product_name, p.tax_percentage,
+                si.number_of_roll, si.weight_per_roll
             FROM (SELECT * FROM sale WHERE id = :saleId AND client_id = :clientId) s
             LEFT JOIN (SELECT * FROM customer WHERE client_id = :clientId) c ON s.customer_id = c.id
             LEFT JOIN (SELECT * FROM sale_items WHERE sale_id = :saleId) si ON s.id = si.sale_id
@@ -189,6 +190,8 @@ public class SaleDao {
             BigDecimal discountAmount = toBigDecimal(row[11]);
             String productName = Objects.toString(row[12], "");
             BigDecimal taxPercentage = toBigDecimal(row[13]);
+            Integer numberOfRoll = row[14] != null ? ((Number) row[14]).intValue() : 0;
+            BigDecimal weightPerRoll = toBigDecimal(row[15]);
 
             BigDecimal price = unitPrice.multiply(quantity);
             if (discountAmount != null) {
@@ -207,6 +210,8 @@ public class SaleDao {
             item.put("taxPercentage", taxPercentage);
             item.put("taxAmount", taxAmount);
             item.put("finalPrice", finalPrice);
+            item.put("numberOfRoll", numberOfRoll);
+            item.put("weightPerRoll", weightPerRoll);
             items.add(item);
         }
         response.put("items", items);
@@ -251,7 +256,9 @@ public class SaleDao {
                     "discountAmount", row[13] != null ? row[13] : BigDecimal.ZERO,
                     "finalPrice", row[14] != null ? row[14] : BigDecimal.ZERO,
                     "productId", row[15],
-                    "remarks", row[16] != null ? row[16] : ""
+                    "remarks", row[16] != null ? row[16] : "",
+                    "numberOfRoll", row[17] != null ? row[17] : 0,
+                    "weightPerRoll", row[18] != null ? row[18] : BigDecimal.ZERO
                 ));
             }
         }

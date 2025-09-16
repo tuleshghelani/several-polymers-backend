@@ -45,6 +45,12 @@ public class SaleItem {
     
     @Column(name = "final_price", nullable = false, precision = 19, scale = 2)
     private BigDecimal finalPrice;
+
+    @Column(name = "number_of_roll", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    private Integer numberOfRoll = 0;
+
+    @Column(name = "weight_per_roll", precision = 10, scale = 3, columnDefinition = "NUMERIC(10, 3) DEFAULT 0.000")
+    private BigDecimal weightPerRoll = BigDecimal.ZERO;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quotation_item_id", referencedColumnName = "id", 
