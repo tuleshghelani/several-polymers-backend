@@ -40,6 +40,7 @@ public class QuotationDto {
     private String termsConditions;
     private BigDecimal quotationDiscountPercentage;
     private BigDecimal quotationDiscountAmount;
+    private List<Long> quotationItemIds;
     private List<QuotationItemRequestDto> items;
 
     // Search parameters

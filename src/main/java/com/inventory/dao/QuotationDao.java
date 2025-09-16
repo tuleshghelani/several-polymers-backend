@@ -150,6 +150,7 @@ public class QuotationDao {
                 q.tax_amount as quotation_tax_amount, q.quotation_discount_percentage, 
                 q.quotation_discount_amount, q.reference_name,
                 q.transport_master_id, q.case_number, q.packaging_and_forwading_charges,
+                tm.id as transport_master_id, tm.name as transport_master_name, q.case_number,
                 qi.id as item_id, qi.quantity, qi.unit_price,
                 qi.tax_percentage, qi.tax_amount, qi.final_price,
                 p.id as product_id, p.name as product_name, 
@@ -157,16 +158,22 @@ public class QuotationDao {
                 b.id as brand_id, b.name as brand_name,
                 qi.number_of_roll, qi.weight_per_roll, qi.remarks
             FROM (select * from quotation q where q.client_id = :clientId and q.id = :quotationId) q
-            LEFT JOIN (select * from customer c where c.client_id = :clientId) c ON q.customer_id = c.id
-            LEFT JOIN (select * from quotation_items qi where qi.client_id = :clientId) qi ON q.id = qi.quotation_id
-            LEFT JOIN (select * from product p where p.client_id = :clientId) p ON qi.product_id = p.id
-            LEFT JOIN (select * from brand b where b.client_id = :clientId) b ON qi.brand_id = b.id
-            WHERE q.id = :quotationId 
-        """);
-
+            JOIN (select * from quotation_items qi where qi.client_id = :clientId """);
+            if(request.getQuotationItemIds() != null && !request.getQuotationItemIds().isEmpty()) {
+                sql.append(" and qi.id in (:quotationItemIds) ");
+            }
+            sql.append(" ) qi ON q.id = qi.quotation_id " +
+            " LEFT JOIN (select * from customer c where c.client_id = :clientId) c ON q.customer_id = c.id " +
+            " LEFT JOIN (select * from product p where p.client_id = :clientId) p ON qi.product_id = p.id " +
+            " LEFT JOIN (select * from brand b where b.client_id = :clientId) b ON qi.brand_id = b.id " +
+            " LEFT JOIN (select * from transport_master tm where tm.client_id = :clientId) tm ON q.transport_master_id = tm.id " +
+            " WHERE q.id = :quotationId  ");
         Query query = entityManager.createNativeQuery(sql.toString());
         query.setParameter("quotationId", request.getId());
         query.setParameter("clientId", request.getClientId());
+        if(request.getQuotationItemIds() != null && !request.getQuotationItemIds().isEmpty()) {
+            query.setParameter("quotationItemIds", request.getQuotationItemIds());
+        }
 
         List<Object[]> results = query.getResultList();
         return transformDetailResults(results);
@@ -202,10 +209,12 @@ public class QuotationDao {
         quotation.put("transportMasterId", firstRow[index++]);
         quotation.put("caseNumber", firstRow[index++]);
         quotation.put("packagingAndForwadingCharges", firstRow[index++]);
-
+        quotation.put("transportMasterId", firstRow[index++]);
+        quotation.put("transportMasterName", firstRow[index++]);
+        quotation.put("caseNumber", firstRow[index++]);
         // Process items
         for (Object[] row : results) {
-            index = 19;
+            index = 22;
             Map<String, Object> item = new HashMap<>();
             item.put("id", row[index++]);
             item.put("quantity", row[index++]);

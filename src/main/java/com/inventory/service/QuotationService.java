@@ -74,7 +74,8 @@ public class QuotationService {
     private final SaleRepository saleRepository;
     private final BrandRepository brandRepository;
     private final TransportMasterRepository transportMasterRepository;
-    
+    private final DispatchSlipPdfService dispatchSlipPdfService;
+
 //    private final ProductQuantityService productQuantityService;
 //    private final QuotationItemCalculationRepository quotationItemCalculationRepository;
 //    private final DispatchSlipPdfService dispatchSlipPdfService;
@@ -778,20 +779,20 @@ public class QuotationService {
 //        dailyProfitRepository.save(dailyProfit);
 //    }
 
-//    public byte[] generateDispatchSlipPdf(QuotationDto request) {
-//        try {
-//            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-//            request.setClientId(currentUser.getClient().getId());
-//            Map<String, Object> quotationData = quotationDao.getQuotationDetail(request);
-//            return dispatchSlipPdfService.generateDispatchSlipPdf(quotationData);
-//        } catch (ValidationException ve) {
-//            log.error("Error generating dispatch slip PDF", ve);
-//            throw ve;
-//        } catch (Exception e) {
-//            log.error("Error generating dispatch slip PDF", e);
-//            throw new ValidationException("Failed to generate dispatch slip PDF: " + e.getMessage());
-//        }
-//    }
+    public byte[] generateDispatchSlipPdf(QuotationDto request) {
+        try {
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            request.setClientId(currentUser.getClient().getId());
+            Map<String, Object> quotationData = quotationDao.getQuotationDetail(request);
+            return dispatchSlipPdfService.generateQuotationPdf(quotationData);
+        } catch (ValidationException ve) {
+            ve.printStackTrace();
+            throw ve;
+        } catch (Exception e) {
+            log.error("Error generating quotation PDF", e);
+            throw new ValidationException("Failed to generate PDF: " + e.getMessage());
+        }
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> deleteQuotation(QuotationRequestDto request) {
