@@ -30,7 +30,8 @@ public class SaleDao {
             actualQuery.append("""
                 SELECT 
                     s.id, s.total_sale_amount, 
-                    s.sale_date, s.invoice_number, c.name as customer_name, s.is_black
+                    s.sale_date, s.invoice_number, c.name as customer_name, s.is_black,
+                    s.transport_master_id, s.case_number, s.reference_name
                 """);
 
             countQuery.append("SELECT COUNT(*) ");
@@ -93,6 +94,24 @@ public class SaleDao {
                 """);
             params.put("customerId", dto.getCustomerId());
         }
+        if(!Objects.isNull(dto.getTransportMasterId())) {
+            sql.append("""
+                AND s.transport_master_id = :transportMasterId
+                """);
+            params.put("transportMasterId", dto.getTransportMasterId());
+        }
+        if(!Objects.isNull(dto.getCaseNumber()) && dto.getCaseNumber().trim().length() > 0) {
+            sql.append("""
+                AND LOWER(s.case_number) LIKE :caseNumber
+                """);
+            params.put("caseNumber", "%" + dto.getCaseNumber().toLowerCase().trim() + "%");
+        }
+        if(!Objects.isNull(dto.getReferenceName()) && dto.getReferenceName().trim().length() > 0) {
+            sql.append("""
+                AND LOWER(s.reference_name) LIKE :referenceName
+                """);
+            params.put("referenceName", "%" + dto.getReferenceName().toLowerCase().trim() + "%");
+        }
     }
 
     private void setQueryParameters(Query query, Query countQuery, Map<String, Object> params, SaleDto dto) {
@@ -116,6 +135,9 @@ public class SaleDao {
             sale.put("invoiceNumber", row[i++]);
             sale.put("customerName", row[i++]);
             sale.put("is_black", row[i++]);
+            sale.put("transportMasterId", row[i++]);
+            sale.put("caseNumber", row[i++]);
+            sale.put("referenceName", row[i++]);
             sales.add(sale);
         }
         return sales;
@@ -126,6 +148,7 @@ public class SaleDao {
             SELECT 
                 s.id, s.invoice_number, s.sale_date, s.total_sale_amount,
                 s.created_at, s.updated_at, s.customer_id, s.created_by, s.is_black,
+                s.transport_master_id, s.case_number, s.reference_name,
                 si.id as item_id, si.quantity, si.unit_price, si.discount_percentage,
                 si.discount_amount, si.final_price, 
                 si.product_id, si.remarks, si.number_of_roll, si.weight_per_roll
@@ -149,7 +172,8 @@ public class SaleDao {
                 c.name as customer_name, c.address, c.mobile, c.gst,
                 si.id as item_id, si.quantity, si.unit_price, si.discount_amount,
                 p.name as product_name, p.tax_percentage,
-                si.number_of_roll, si.weight_per_roll
+                si.number_of_roll, si.weight_per_roll,
+                s.transport_master_id, s.case_number, s.reference_name
             FROM (SELECT * FROM sale WHERE id = :saleId AND client_id = :clientId) s
             LEFT JOIN (SELECT * FROM customer WHERE client_id = :clientId) c ON s.customer_id = c.id
             LEFT JOIN (SELECT * FROM sale_items WHERE sale_id = :saleId) si ON s.id = si.sale_id
@@ -216,6 +240,11 @@ public class SaleDao {
         }
         response.put("items", items);
 
+        // transport and references (placed at root for now)
+        response.put("transportMasterId", first[16]);
+        response.put("caseNumber", first[17]);
+        response.put("referenceName", first[18]);
+
         return response;
     }
 
@@ -243,22 +272,25 @@ public class SaleDao {
         response.put("customerId", firstRow[6]);
         response.put("createdBy", firstRow[7]);
         response.put("isBlack", firstRow[8]);
+        response.put("transportMasterId", firstRow[9]);
+        response.put("caseNumber", firstRow[10]);
+        response.put("referenceName", firstRow[11]);
 
         // Set items
         List<Map<String, Object>> items = new ArrayList<>();
         for (Object[] row : results) {
-            if (row[9] != null) { // if item exists
+            if (row[12] != null) { // if item exists
                 items.add(Map.of(
-                    "id", row[9],
-                    "quantity", row[10] != null ? row[10] : 0,
-                    "unitPrice", row[11] != null ? row[11] : BigDecimal.ZERO,
-                    "discountPercentage", row[12] != null ? row[12] : 0,
-                    "discountAmount", row[13] != null ? row[13] : BigDecimal.ZERO,
-                    "finalPrice", row[14] != null ? row[14] : BigDecimal.ZERO,
-                    "productId", row[15],
-                    "remarks", row[16] != null ? row[16] : "",
-                    "numberOfRoll", row[17] != null ? row[17] : 0,
-                    "weightPerRoll", row[18] != null ? row[18] : BigDecimal.ZERO
+                    "id", row[12],
+                    "quantity", row[13] != null ? row[13] : 0,
+                    "unitPrice", row[14] != null ? row[14] : BigDecimal.ZERO,
+                    "discountPercentage", row[15] != null ? row[15] : 0,
+                    "discountAmount", row[16] != null ? row[16] : BigDecimal.ZERO,
+                    "finalPrice", row[17] != null ? row[17] : BigDecimal.ZERO,
+                    "productId", row[18],
+                    "remarks", row[19] != null ? row[19] : "",
+                    "numberOfRoll", row[20] != null ? row[20] : 0,
+                    "weightPerRoll", row[21] != null ? row[21] : BigDecimal.ZERO
                 ));
             }
         }

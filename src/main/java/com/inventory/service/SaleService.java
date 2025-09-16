@@ -32,6 +32,8 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 @Service
 @RequiredArgsConstructor
@@ -50,6 +52,8 @@ public class SaleService {
     private final QuotationRepository quotationRepository;
     private final SalesBillNumberGeneratorService salesBillNumberGeneratorService;
     private final SalePdfGenerationService salePdfGenerationService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> createSale(SaleRequestDto request) {
@@ -72,6 +76,12 @@ public class SaleService {
             sale.setNumberOfItems(request.getProducts().size());
             sale.setClient(currentUser.getClient());
             sale.setCreatedBy(currentUser);
+            if (request.getTransportMasterId() != null) {
+                sale.setTransportMaster(entityManager.getReference(
+                        com.inventory.entity.TransportMaster.class, request.getTransportMasterId()));
+            }
+            sale.setCaseNumber(request.getCaseNumber());
+            sale.setReferenceName(request.getReferenceName());
             sale = saleRepository.save(sale);
             
             // Process items in batches
@@ -159,6 +169,13 @@ public class SaleService {
             sale.setClient(currentUser.getClient());
             sale.setCreatedBy(currentUser);
             sale.setQuotation(parentQuotation);
+            // Optional fields propagated from request if provided
+            if (request.getTransportMasterId() != null) {
+                sale.setTransportMaster(entityManager.getReference(
+                        com.inventory.entity.TransportMaster.class, request.getTransportMasterId()));
+            }
+            sale.setCaseNumber(request.getCaseNumber());
+            sale.setReferenceName(request.getReferenceName());
 
             // Generate invoice number
             String invoiceNumber = salesBillNumberGeneratorService.generateInvoiceNumber(currentUser.getClient());
@@ -413,6 +430,14 @@ public class SaleService {
         existingSale.setInvoiceNumber(request.getInvoiceNumber());
         existingSale.setNumberOfItems(request.getProducts().size());
         existingSale.setUpdatedBy(currentUser);
+        if (request.getTransportMasterId() != null) {
+            existingSale.setTransportMaster(entityManager.getReference(
+                    com.inventory.entity.TransportMaster.class, request.getTransportMasterId()));
+        } else {
+            existingSale.setTransportMaster(null);
+        }
+        existingSale.setCaseNumber(request.getCaseNumber());
+        existingSale.setReferenceName(request.getReferenceName());
         existingSale.setUpdatedAt(OffsetDateTime.now());
         // Process new items
         List<SaleItem> newItems = new ArrayList<>();

@@ -23,4 +23,7 @@ public class SaleRequestDto {
     private String invoiceNumber;
     private List<SaleItemDto> products;
     private Boolean isBlack;
+    private Long transportMasterId;
+    private String caseNumber;
+    private String referenceName;
 }

@@ -22,6 +22,7 @@ public class SaleDto {
     private String name;
     private String search;
     private Long customerId;
+    private Long transportMasterId;
     private Long categoryId;
     private String description;
     private BigDecimal purchaseAmount;
@@ -31,6 +32,8 @@ public class SaleDto {
     private BigDecimal weight;
     private BigDecimal remainingQuantity;
     private Long clientId;
+    private String caseNumber;
+    private String referenceName;
     private Integer page = 0;
     private Integer size = 10;
     private String sortBy = "id";

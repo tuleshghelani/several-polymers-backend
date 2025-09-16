@@ -56,6 +56,17 @@ public class Sale {
     @JoinColumn(name = "quotation_id", referencedColumnName = "id", 
         foreignKey = @ForeignKey(name = "fk_sale_quotation_id_quotation_id"))
     private Quotation quotation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transport_master_id",
+            foreignKey = @ForeignKey(name = "fk_sale_transport_master_id_transport_master_id"))
+    private TransportMaster transportMaster;
+
+    @Column(name = "case_number")
+    private String caseNumber;
+    
+    @Column(name = "reference_name", length = 256)
+    private String referenceName;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "id", 

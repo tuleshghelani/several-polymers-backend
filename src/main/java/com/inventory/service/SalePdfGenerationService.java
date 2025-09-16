@@ -109,6 +109,14 @@ public class SalePdfGenerationService {
                 "Customer GST", formatValue(data.get("customerGst")),
                 "Mobile No.", formatValue(data.get("contactNumber")));
 
+        addDetailPair(detailsTable,
+                "Transport", formatValue(data.get("transportMasterId")),
+                "Case Number", formatValue(data.get("caseNumber")));
+
+        addDetailPair(detailsTable,
+                "Reference Name", formatValue(data.get("referenceName")),
+                null, null);
+
         infoCell.add(customerName)
                 .add(customerAddress)
                 .add(detailsTable)
@@ -125,10 +133,12 @@ public class SalePdfGenerationService {
                 .add(new Paragraph(label1 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
                 .add(new Paragraph(value1).setFontSize(8).setFontColor(TEXT_DARK)));
-        table.addCell(new Cell().setBorder(Border.NO_BORDER)
-                .add(new Paragraph(label2 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
-        table.addCell(new Cell().setBorder(Border.NO_BORDER)
-                .add(new Paragraph(value2).setFontSize(8).setFontColor(TEXT_DARK)));
+        if(label2 != null && value2 != null) {
+                table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                        .add(new Paragraph(label2 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
+                table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                        .add(new Paragraph(value2).setFontSize(8).setFontColor(TEXT_DARK)));
+        }
     }
 
     private void addItemsTable(Document document, List<Map<String, Object>> items) {
