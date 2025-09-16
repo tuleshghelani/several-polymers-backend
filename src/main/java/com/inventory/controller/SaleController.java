@@ -4,10 +4,12 @@ import com.inventory.dto.ApiResponse;
 import com.inventory.dto.SaleDto;
 import com.inventory.dto.SaleRequestDto;
 import com.inventory.service.SaleService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/sales")
@@ -46,5 +48,16 @@ public class SaleController {
     @PostMapping("/createFromQuotationItems")
     public ResponseEntity<ApiResponse<?>> createFromQuotationItems(@RequestBody SaleDto request) {
         return ResponseEntity.ok(saleService.createSaleFromQuotationItems(request));
+    }
+
+    @PostMapping("/generate-pdf")
+    public ResponseEntity<byte[]> generateSalePdf(@RequestBody SaleDto request) {
+        byte[] pdfBytes = saleService.generateSalePdf(request);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("filename", "sale-invoice.pdf");
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 }

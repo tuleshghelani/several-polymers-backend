@@ -49,6 +49,7 @@ public class SaleService {
     private final QuotationItemRepository quotationItemRepository;
     private final QuotationRepository quotationRepository;
     private final SalesBillNumberGeneratorService salesBillNumberGeneratorService;
+    private final SalePdfGenerationService salePdfGenerationService;
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> createSale(SaleRequestDto request) {
@@ -217,6 +218,19 @@ public class SaleService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ValidationException("Failed to create sale from quotation items: " + e.getMessage());
+        }
+    }
+
+    public byte[] generateSalePdf(SaleDto request) {
+        try {
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            Map<String, Object> saleData = saleDao.getSalePdfDetail(request.getId(), currentUser.getClient().getId());
+            return salePdfGenerationService.generateSalePdf(saleData);
+        } catch (ValidationException ve) {
+            throw ve;
+        } catch (Exception e) {
+            log.error("Error generating sale PDF: {}", e.getMessage(), e);
+            throw new ValidationException("Failed to generate Sale PDF: " + e.getMessage());
         }
     }
     

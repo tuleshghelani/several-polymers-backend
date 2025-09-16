@@ -45,6 +45,12 @@ public class Sale {
 
     @Column(name = "is_black", columnDefinition = "bool default false")
     private Boolean isBlack = false;
+
+    @Column(name = "number_of_roll", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    private Integer numberOfRoll = 0;
+
+    @Column(name = "weight_per_roll", precision = 10, scale = 3, columnDefinition = "NUMERIC(10, 3) DEFAULT 0.000")
+    private BigDecimal weightPerRoll = BigDecimal.ZERO;
     
     @Column(length = 29, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();

@@ -142,6 +142,84 @@ public class SaleDao {
         return transformToDetailResponse(results);
     }
 
+    public Map<String, Object> getSalePdfDetail(Long saleId, Long clientId) {
+        String sql = """
+            SELECT 
+                s.id, s.invoice_number, s.sale_date, s.total_sale_amount,
+                c.name as customer_name, c.address, c.mobile, c.gst,
+                si.id as item_id, si.quantity, si.unit_price, si.discount_amount,
+                p.name as product_name, p.tax_percentage
+            FROM (SELECT * FROM sale WHERE id = :saleId AND client_id = :clientId) s
+            LEFT JOIN (SELECT * FROM customer WHERE client_id = :clientId) c ON s.customer_id = c.id
+            LEFT JOIN (SELECT * FROM sale_items WHERE sale_id = :saleId) si ON s.id = si.sale_id
+            LEFT JOIN (SELECT * FROM product WHERE client_id = :clientId) p ON si.product_id = p.id
+            WHERE s.id = :saleId
+        """;
+
+        Query query = entityManager.createNativeQuery(sql)
+                .setParameter("saleId", saleId)
+                .setParameter("clientId", clientId);
+
+        List<Object[]> results = query.getResultList();
+        return transformToPdfDetail(results);
+    }
+
+    private Map<String, Object> transformToPdfDetail(List<Object[]> results) {
+        if (results.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        Object[] first = results.get(0);
+
+        response.put("id", first[0]);
+        response.put("invoiceNumber", first[1]);
+        response.put("saleDate", first[2]);
+        response.put("totalAmount", first[3] != null ? first[3] : BigDecimal.ZERO);
+        response.put("customerName", first[4]);
+        response.put("address", first[5]);
+        response.put("contactNumber", first[6]);
+        response.put("customerGst", first[7]);
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Object[] row : results) {
+            if (row[8] == null) continue; // no item
+            BigDecimal quantity = toBigDecimal(row[9]);
+            BigDecimal unitPrice = toBigDecimal(row[10]);
+            BigDecimal discountAmount = toBigDecimal(row[11]);
+            String productName = Objects.toString(row[12], "");
+            BigDecimal taxPercentage = toBigDecimal(row[13]);
+
+            BigDecimal price = unitPrice.multiply(quantity);
+            if (discountAmount != null) {
+                price = price.subtract(discountAmount);
+            }
+            // To avoid disturbing existing accounting, compute tax as 0 for now
+            BigDecimal taxAmount = BigDecimal.ZERO;
+            BigDecimal finalPrice = price.add(taxAmount);
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", row[8]);
+            item.put("productName", productName);
+            item.put("quantity", quantity);
+            item.put("unitPrice", unitPrice);
+            item.put("price", price);
+            item.put("taxPercentage", taxPercentage);
+            item.put("taxAmount", taxAmount);
+            item.put("finalPrice", finalPrice);
+            items.add(item);
+        }
+        response.put("items", items);
+
+        return response;
+    }
+
+    private BigDecimal toBigDecimal(Object value) {
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal) return (BigDecimal) value;
+        return new BigDecimal(value.toString());
+    }
+
     private Map<String, Object> transformToDetailResponse(List<Object[]> results) {
         if (results.isEmpty()) {
             return Collections.emptyMap();
