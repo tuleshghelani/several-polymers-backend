@@ -13,6 +13,7 @@ import java.util.Objects;
 import com.inventory.dto.request.QuotationItemRequestDto;
 import com.inventory.dto.request.QuotationItemCreatedRollUpdateDto;
 import com.inventory.dto.request.QuotationItemProductionUpdateDto;
+import com.inventory.dto.request.QuotationItemNumberOfRollUpdateDto;
 import com.inventory.dto.request.QuotationItemStatusUpdateDto;
 import com.inventory.dto.request.QuotationRequestDto;
 import com.inventory.dto.request.QuotationItemRequestDto;
@@ -200,6 +201,38 @@ public class QuotationService {
             throw e;
         } catch (Exception e) {
             throw new ValidationException("Failed to update created roll: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public ApiResponse<?> updateQuotationItemNumberOfRoll(QuotationItemNumberOfRollUpdateDto request) {
+        try {
+            if (request.getId() == null) {
+                throw new ValidationException("Quotation item id is required");
+            }
+            if (request.getNumberOfRoll() == null || request.getNumberOfRoll() < 0) {
+                throw new ValidationException("numberOfRoll must be zero or positive");
+            }
+
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            QuotationItem item = quotationItemRepository.findById(request.getId())
+                    .orElseThrow(() -> new ValidationException("Quotation item not found"));
+
+            if (!item.getClient().getId().equals(currentUser.getClient().getId())) {
+                throw new ValidationException("Unauthorized access to quotation item");
+            }
+            if(!Objects.isNull(item.getQuotationItemStatus()) && item.getQuotationItemStatus().equals(QuotationStatusItem.B.value)) {
+                throw new ValidationException("Number of roll cannot be updated for billed items");
+            }
+            item.setNumberOfRoll(request.getNumberOfRoll());
+            quotationItemRepository.save(item);
+            return ApiResponse.success("Number of roll updated successfully");
+        } catch (ValidationException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ValidationException("Failed to update number of roll: " + e.getMessage());
         }
     }
 

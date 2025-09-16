@@ -28,4 +28,8 @@ public interface QuotationItemRepository extends JpaRepository<QuotationItem, Lo
     @Modifying
     @Query("UPDATE QuotationItem qi SET qi.createdRoll = :createdRoll WHERE qi.id = :id")
     int updateCreatedRollById(Long id, Integer createdRoll);
+
+    @Modifying
+    @Query("UPDATE QuotationItem qi SET qi.numberOfRoll = :numberOfRoll WHERE qi.id = :id")
+    int updateNumberOfRollById(Long id, Integer numberOfRoll);
 }

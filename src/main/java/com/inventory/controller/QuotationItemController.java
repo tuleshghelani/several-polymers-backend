@@ -3,6 +3,7 @@ package com.inventory.controller;
 import com.inventory.dto.ApiResponse;
 import com.inventory.dto.request.QuotationItemProductionUpdateDto;
 import com.inventory.dto.request.QuotationItemCreatedRollUpdateDto;
+import com.inventory.dto.request.QuotationItemNumberOfRollUpdateDto;
 import com.inventory.dto.request.QuotationItemRequestDto;
 import com.inventory.dto.request.QuotationItemStatusUpdateDto;
 import com.inventory.service.QuotationService;
@@ -36,6 +37,12 @@ public class QuotationItemController {
     public ResponseEntity<ApiResponse<?>> updateCreatedRoll(@RequestBody QuotationItemCreatedRollUpdateDto request) {
         log.debug("Update quotation item createdRoll for ID: {}", request.getId());
         return ResponseEntity.ok(quotationService.updateQuotationItemCreatedRoll(request));
+    }
+
+    @PutMapping("/number-of-roll")
+    public ResponseEntity<ApiResponse<?>> updateNumberOfRoll(@RequestBody QuotationItemNumberOfRollUpdateDto request) {
+        log.debug("Update quotation item numberOfRoll for ID: {}", request.getId());
+        return ResponseEntity.ok(quotationService.updateQuotationItemNumberOfRoll(request));
     }
 
     @PostMapping("/search")
