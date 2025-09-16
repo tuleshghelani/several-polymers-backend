@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 @Repository
 public interface QuotationItemRepository extends JpaRepository<QuotationItem, Long> {
@@ -32,4 +33,17 @@ public interface QuotationItemRepository extends JpaRepository<QuotationItem, Lo
     @Modifying
     @Query("UPDATE QuotationItem qi SET qi.numberOfRoll = :numberOfRoll WHERE qi.id = :id")
     int updateNumberOfRollById(Long id, Integer numberOfRoll);
+
+    // Aggregations for a quotation to recompute totals efficiently
+    @Query("SELECT COALESCE(SUM(qi.finalPrice), 0) FROM QuotationItem qi WHERE qi.quotation.id = :quotationId")
+    BigDecimal sumFinalPriceByQuotationId(Long quotationId);
+
+    @Query("SELECT COALESCE(SUM(qi.taxAmount), 0) FROM QuotationItem qi WHERE qi.quotation.id = :quotationId")
+    BigDecimal sumTaxAmountByQuotationId(Long quotationId);
+
+    @Query("SELECT COALESCE(SUM(qi.discountPrice), 0) FROM QuotationItem qi WHERE qi.quotation.id = :quotationId")
+    BigDecimal sumDiscountPriceByQuotationId(Long quotationId);
+
+    @Query("SELECT COALESCE(SUM(qi.quotationDiscountAmount), 0) FROM QuotationItem qi WHERE qi.quotation.id = :quotationId")
+    BigDecimal sumQuotationDiscountAmountByQuotationId(Long quotationId);
 }

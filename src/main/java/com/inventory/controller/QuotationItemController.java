@@ -6,6 +6,7 @@ import com.inventory.dto.request.QuotationItemCreatedRollUpdateDto;
 import com.inventory.dto.request.QuotationItemNumberOfRollUpdateDto;
 import com.inventory.dto.request.QuotationItemRequestDto;
 import com.inventory.dto.request.QuotationItemStatusUpdateDto;
+import com.inventory.dto.request.QuotationItemQuantityUpdateDto;
 import com.inventory.service.QuotationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +49,12 @@ public class QuotationItemController {
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<?>> search(@RequestBody QuotationItemRequestDto request) {
         return ResponseEntity.ok(quotationService.searchQuotationItems(request));
+    }
+
+    @PutMapping("/quantity")
+    public ResponseEntity<ApiResponse<?>> updateQuantity(@RequestBody QuotationItemQuantityUpdateDto request) {
+        log.debug("Update quotation item quantity for ID: {}", request.getId());
+        return ResponseEntity.ok(quotationService.updateQuotationItemQuantity(request));
     }
 }
 

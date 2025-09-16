@@ -13,6 +13,7 @@ import java.util.Objects;
 import com.inventory.dto.request.QuotationItemRequestDto;
 import com.inventory.dto.request.QuotationItemCreatedRollUpdateDto;
 import com.inventory.dto.request.QuotationItemProductionUpdateDto;
+import com.inventory.dto.request.QuotationItemQuantityUpdateDto;
 import com.inventory.dto.request.QuotationItemNumberOfRollUpdateDto;
 import com.inventory.dto.request.QuotationItemStatusUpdateDto;
 import com.inventory.dto.request.QuotationRequestDto;
@@ -499,6 +500,97 @@ public class QuotationService {
         quotation.setReferenceName(request.getReferenceName());
         quotation.setUpdatedAt(OffsetDateTime.now());
         quotation.setUpdatedBy(currentUser);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<?> updateQuotationItemQuantity(QuotationItemQuantityUpdateDto request) {
+        try {
+            if (request.getId() == null) {
+                throw new ValidationException("Quotation item id is required");
+            }
+            if (request.getQuantity() == null || request.getQuantity().compareTo(BigDecimal.ZERO) < 0) {
+                throw new ValidationException("quantity must be zero or positive");
+            }
+
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            QuotationItem item = quotationItemRepository.findById(request.getId())
+                    .orElseThrow(() -> new ValidationException("Quotation item not found"));
+
+            if (!item.getClient().getId().equals(currentUser.getClient().getId())) {
+                throw new ValidationException("Unauthorized access to quotation item");
+            }
+            if(!Objects.isNull(item.getQuotationItemStatus()) && item.getQuotationItemStatus().equals(QuotationStatusItem.B.value)) {
+                throw new ValidationException("Quantity cannot be updated for billed items");
+            }
+
+            // Recalculate item amounts based on existing pricing rules
+            Product product = item.getProduct();
+            if (product.getTaxPercentage() == null) {
+                item.setTaxPercentage(DEFAULT_TAX_PERCENTAGE);
+            } else {
+                item.setTaxPercentage(product.getTaxPercentage());
+            }
+
+            item.setQuantity(request.getQuantity());
+
+            BigDecimal subTotal = item.getUnitPrice().multiply(item.getQuantity())
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            BigDecimal afterDiscount = subTotal; // No per-line discount in current logic
+
+            BigDecimal baseTaxAmount = calculatePercentageAmount(afterDiscount, item.getTaxPercentage());
+
+            BigDecimal quotationDiscountPercentage = item.getQuotationDiscountPercentage() != null ? item.getQuotationDiscountPercentage() : BigDecimal.ZERO;
+            if (quotationDiscountPercentage.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal quotationDiscountAmountOnTax = calculatePercentageAmount(baseTaxAmount, quotationDiscountPercentage);
+                item.setQuotationDiscountPercentage(quotationDiscountPercentage);
+                item.setQuotationDiscountAmount(quotationDiscountAmountOnTax);
+
+                BigDecimal discountedTaxAmount = baseTaxAmount.subtract(quotationDiscountAmountOnTax).setScale(2, RoundingMode.HALF_UP);
+                item.setTaxAmount(discountedTaxAmount);
+                BigDecimal finalPrice = afterDiscount.add(discountedTaxAmount).setScale(2, RoundingMode.HALF_UP);
+                item.setFinalPrice(finalPrice);
+                item.setQuotationDiscountPrice(finalPrice);
+            } else {
+                BigDecimal taxAmount = baseTaxAmount.setScale(2, RoundingMode.HALF_UP);
+                item.setTaxAmount(taxAmount);
+                BigDecimal finalPrice = afterDiscount.add(taxAmount).setScale(2, RoundingMode.HALF_UP);
+                item.setFinalPrice(finalPrice);
+                item.setQuotationDiscountPercentage(BigDecimal.ZERO);
+                item.setQuotationDiscountAmount(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+                item.setQuotationDiscountPrice(finalPrice);
+            }
+
+            item.setDiscountPrice(afterDiscount);
+
+            quotationItemRepository.save(item);
+
+            // Recompute quotation aggregates efficiently
+            Quotation quotation = item.getQuotation();
+            BigDecimal totalAmountFromItems = quotationItemRepository.sumFinalPriceByQuotationId(quotation.getId());
+            BigDecimal taxAmountFromItems = quotationItemRepository.sumTaxAmountByQuotationId(quotation.getId());
+            BigDecimal discountedPriceFromItems = quotationItemRepository.sumDiscountPriceByQuotationId(quotation.getId());
+            BigDecimal quotationDiscountAmountFromItems = quotationItemRepository.sumQuotationDiscountAmountByQuotationId(quotation.getId());
+
+            BigDecimal packagingAndForwadingCharges = quotation.getPackagingAndForwadingCharges() != null ? quotation.getPackagingAndForwadingCharges() : BigDecimal.ZERO;
+            BigDecimal newTotalAmount = totalAmountFromItems.add(packagingAndForwadingCharges).setScale(0, RoundingMode.HALF_UP);
+
+            quotation.setTotalAmount(newTotalAmount);
+            quotation.setTaxAmount(taxAmountFromItems);
+            quotation.setDiscountedPrice(discountedPriceFromItems);
+            quotation.setQuotationDiscountAmount(quotationDiscountAmountFromItems);
+            quotation.setUpdatedAt(OffsetDateTime.now());
+            quotation.setUpdatedBy(currentUser);
+            quotationRepository.save(quotation);
+
+            return ApiResponse.success("Quantity updated successfully");
+        } catch (ValidationException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ValidationException("Failed to update quantity: " + e.getMessage());
+        }
     }
 
     public Map<String, Object> searchQuotations(QuotationDto searchParams) {
