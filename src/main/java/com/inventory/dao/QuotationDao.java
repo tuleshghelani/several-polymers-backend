@@ -54,14 +54,14 @@ public class QuotationDao {
             LEFT JOIN (SELECT * FROM customer c WHERE c.client_id = :clientId) c 
             ON q.customer_id = c.id
             WHERE 1=1
-            """);
+            """);   
     }
 
     private String buildMainQuery(String nativeQuery, String conditions, QuotationDto searchParams) {
         return new StringBuilder()
                 .append("SELECT q.id, q.quote_number, q.quote_date,")
                 .append(" q.total_amount, q.status, COALESCE(c.name, q.customer_name, '') as customer_name, ")
-                .append(" q.valid_until, q.remarks, q.terms_conditions ")
+                .append(" q.valid_until, q.remarks, COALESCE(q.contact_number, c.mobile, '') as contact_number ")
                 .append(nativeQuery)
                 .append(conditions)
                 .append(" ORDER BY q.").append(searchParams.getSortBy()).append(" ")
@@ -131,7 +131,7 @@ public class QuotationDao {
             quotation.put("customerName", row[index++]);
             quotation.put("validUntil", row[index++]);
             quotation.put("remarks", row[index++]);
-            quotation.put("termsConditions", row[index++]);
+            quotation.put("contactNumber", row[index++]);
             quotations.add(quotation);
         }
 

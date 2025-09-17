@@ -276,38 +276,55 @@ public class QuotationService {
 
             updateQuotationDetails(quotation, request, currentUser);
 
-            // Delete existing items
-            quotationItemRepository.deleteByQuotationId(quotation.getId());
+            // 1) Fetch billed items (status 'B') to preserve
+            List<QuotationItem> billedItems = quotationItemRepository
+                    .findByQuotationIdAndQuotationItemStatus(quotation.getId(), QuotationStatusItem.B.value);
 
-            List<QuotationItem> items = new ArrayList<>();
-            BigDecimal totalAmount = BigDecimal.ZERO;
-            BigDecimal taxAmount = BigDecimal.ZERO;
-            BigDecimal discountedPrice = BigDecimal.ZERO;
-            BigDecimal quotationDiscountAmount = BigDecimal.ZERO;
-            BigDecimal quotationDiscountPrice = BigDecimal.ZERO;
-
-            for (QuotationItemRequestDto itemDto : request.getItems()) {
-                QuotationItem item = createQuotationItem(itemDto, quotation, currentUser, request);
-                items.add(item);
-                totalAmount = totalAmount.add(item.getFinalPrice());
-                taxAmount = taxAmount.add(item.getTaxAmount());
-                discountedPrice = discountedPrice.add(item.getDiscountPrice());
-                quotationDiscountAmount = quotationDiscountAmount.add(item.getQuotationDiscountAmount());
-                quotationDiscountPrice = quotationDiscountPrice.add(item.getQuotationDiscountPrice());
+            java.util.Set<Long> billedItemIds = new java.util.HashSet<>();
+            for (QuotationItem bi : billedItems) {
+                if (bi.getId() != null) {
+                    billedItemIds.add(bi.getId());
+                }
             }
 
-            quotationItemRepository.saveAll(items);
+            // 2) Delete only non-billed items
+            quotationItemRepository.deleteNonBByQuotationId(quotation.getId(), QuotationStatusItem.B.value);
 
+            // 3) Remove preserved (billed) ids from incoming request before insert
+            List<QuotationItemRequestDto> itemsToInsert = new ArrayList<>();
+            for (QuotationItemRequestDto itemDto : request.getItems()) {
+                if (itemDto.getId() != null && billedItemIds.contains(itemDto.getId())) {
+                    // Skip inserting over billed items
+                    continue;
+                }
+                itemsToInsert.add(itemDto);
+            }
+
+            // 4) Insert remaining items
+            List<QuotationItem> items = new ArrayList<>();
+            for (QuotationItemRequestDto itemDto : itemsToInsert) {
+                QuotationItem item = createQuotationItem(itemDto, quotation, currentUser, request);
+                items.add(item);
+            }
+            if (!items.isEmpty()) {
+                quotationItemRepository.saveAll(items);
+            }
+
+            // 5) Recompute totals from all items currently in DB (billed + newly inserted)
             BigDecimal packagingAndForwadingCharges = request.getPackagingAndForwadingCharges() != null ? request.getPackagingAndForwadingCharges() : BigDecimal.ZERO;
             quotation.setPackagingAndForwadingCharges(packagingAndForwadingCharges);
-            totalAmount = totalAmount.add(packagingAndForwadingCharges);
-            totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
-            quotation.setTotalAmount(totalAmount);
-            quotation.setTaxAmount(taxAmount);
-            // discountedPrice should reflect sum of item discountPrice (pre-tax)
-            quotation.setDiscountedPrice(discountedPrice);
+
+            BigDecimal totalAmountFromItems = quotationItemRepository.sumFinalPriceByQuotationId(quotation.getId());
+            BigDecimal taxAmountFromItems = quotationItemRepository.sumTaxAmountByQuotationId(quotation.getId());
+            BigDecimal discountedPriceFromItems = quotationItemRepository.sumDiscountPriceByQuotationId(quotation.getId());
+            BigDecimal quotationDiscountAmountFromItems = quotationItemRepository.sumQuotationDiscountAmountByQuotationId(quotation.getId());
+
+            BigDecimal newTotalAmount = totalAmountFromItems.add(packagingAndForwadingCharges).setScale(0, RoundingMode.HALF_UP);
+            quotation.setTotalAmount(newTotalAmount);
+            quotation.setTaxAmount(taxAmountFromItems);
+            quotation.setDiscountedPrice(discountedPriceFromItems);
             quotation.setQuotationDiscountPercentage(request.getQuotationDiscountPercentage());
-            quotation.setQuotationDiscountAmount(quotationDiscountAmount);
+            quotation.setQuotationDiscountAmount(quotationDiscountAmountFromItems);
             quotationRepository.save(quotation);
 
             return ApiResponse.success("Quotation updated successfully");

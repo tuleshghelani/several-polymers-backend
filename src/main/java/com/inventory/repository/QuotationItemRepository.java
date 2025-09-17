@@ -18,6 +18,8 @@ public interface QuotationItemRepository extends JpaRepository<QuotationItem, Lo
 
     List<QuotationItem> findByQuotationId(Long quotationId);
 
+    List<QuotationItem> findByQuotationIdAndQuotationItemStatus(Long quotationId, String quotationItemStatus);
+
     @Modifying
     @Query("UPDATE QuotationItem qi SET qi.quotationItemStatus = :status WHERE qi.id = :id")
     int updateQuotationItemStatusById(Long id, String status);
@@ -46,4 +48,8 @@ public interface QuotationItemRepository extends JpaRepository<QuotationItem, Lo
 
     @Query("SELECT COALESCE(SUM(qi.quotationDiscountAmount), 0) FROM QuotationItem qi WHERE qi.quotation.id = :quotationId")
     BigDecimal sumQuotationDiscountAmountByQuotationId(Long quotationId);
+
+    @Modifying
+    @Query("DELETE FROM QuotationItem qi WHERE qi.quotation.id = :quotationId AND (qi.quotationItemStatus IS NULL OR qi.quotationItemStatus <> :statusToKeep)")
+    void deleteNonBByQuotationId(Long quotationId, String statusToKeep);
 }
