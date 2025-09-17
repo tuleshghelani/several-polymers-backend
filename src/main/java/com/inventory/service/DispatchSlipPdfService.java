@@ -106,7 +106,7 @@ public class DispatchSlipPdfService {
         // Cell infoCell = new Cell();
         // infoCell.add(new Paragraph("MOVAIYA, TA - PADDHARI, RAJKOT, Rajkot, Gujarat, 360110")
         //                 .setFontSize(9).setFontColor(TEXT_DARK))
-        //         .add(new Paragraph("E-mail: severalpolymers@gmail.com | Mo. 7490044572")
+        //         .add(new Paragraph("E-mail: severalpolymers@gmail.com ")
         //                 .setFontSize(9).setFontColor(TEXT_DARK))
         //         .add(new Paragraph("GST NO.24DMAPP6011D1ZL").setFontSize(9).setBold().setFontColor(SECONDARY_COLOR));
         // infoCell.setBorder(Border.NO_BORDER).setPadding(2).setTextAlignment(TextAlignment.RIGHT);
@@ -657,7 +657,7 @@ public class DispatchSlipPdfService {
                 
         // Center - Contact information
         Cell contactCell = new Cell()
-                .add(new Paragraph("Several Polymers [ Mo. - 7490044572 ]")
+                .add(new Paragraph("Several Polymers")
                         .setFontSize(7)
                         .setFontColor(TEXT_LIGHT))
                 .setBorder(Border.NO_BORDER)

@@ -306,7 +306,7 @@ public class SalePdfGenerationService {
                 .setFixedPosition(36, footerY, pageWidth - 72);
 
         Cell contactCell = new Cell()
-                .add(new Paragraph("Several Polymers [ Mo. - 7490044572 ]")
+                .add(new Paragraph("Several Polymers")
                         .setFontSize(7)
                         .setFontColor(TEXT_LIGHT))
                 .setBorder(Border.NO_BORDER)

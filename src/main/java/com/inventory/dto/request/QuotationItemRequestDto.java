@@ -1,6 +1,7 @@
 package com.inventory.dto.request;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -37,6 +38,7 @@ public class QuotationItemRequestDto {
 //    private BigDecimal loadingCharge;
     private Boolean isProduction;
     private String quotationItemStatus;
+    private List<String> quotationItemStatuses;
 
     // Search & pagination
     private Integer page = 0;

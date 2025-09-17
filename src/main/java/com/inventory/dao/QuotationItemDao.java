@@ -98,9 +98,9 @@ public class QuotationItemDao {
             sql.append(" AND qi.is_production = :isProduction");
             params.put("isProduction", dto.getIsProduction());
         }
-        if (StringUtils.hasText(dto.getQuotationItemStatus())) {
-            sql.append(" AND qi.quotation_item_status = :status");
-            params.put("status", dto.getQuotationItemStatus().trim());
+        if (dto.getQuotationItemStatuses() != null && !dto.getQuotationItemStatuses().isEmpty()) {
+            sql.append(" AND qi.quotation_item_status IN (:status) ");
+            params.put("status", dto.getQuotationItemStatuses());
         }
         if (dto.getBrandId() != null) {
             sql.append(" AND qi.brand_id = :brandId");

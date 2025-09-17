@@ -599,6 +599,7 @@ public class QuotationService {
             searchParams.setClientId(currentUser.getClient().getId());
             return quotationDao.searchQuotations(searchParams);
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Error searching quotations", e);
             throw new ValidationException("Failed to search quotations: " + e.getMessage());
         }

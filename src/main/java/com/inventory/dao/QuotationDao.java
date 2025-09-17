@@ -86,16 +86,20 @@ public class QuotationDao {
             params.put("search", "%" + searchParams.getSearch().trim() + "%");
         }
         if (searchParams.getStartDate() != null) {
-            conditions.append(" AND q.quote_date >= :startDate");
+            conditions.append(" AND q.quote_date >= :startDate ");
             params.put("startDate", searchParams.getStartDate());
         }
         if (searchParams.getEndDate() != null) {
-            conditions.append(" AND q.quote_date <= :endDate");
+            conditions.append(" AND q.quote_date <= :endDate ");
             params.put("endDate", searchParams.getEndDate());
         }
         if (searchParams.getStatus() != null) {
-            conditions.append(" AND q.status = :status");
+            conditions.append(" AND q.status = :status ");
             params.put("status", searchParams.getStatus());
+        }
+        if (searchParams.getQuotationStatus() != null && !searchParams.getQuotationStatus().isEmpty()) {
+            conditions.append(" AND q.status IN (:quotationStatus)");
+            params.put("quotationStatus", searchParams.getQuotationStatus());
         }
         if(searchParams.getCustomerId() != null) {
             conditions.append(" AND q.customer_id = :customerId");

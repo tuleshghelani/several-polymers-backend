@@ -116,7 +116,7 @@ public class QuotationPdfGenerationService {
         // Cell infoCell = new Cell();
         // infoCell.add(new Paragraph("MOVAIYA, TA - PADDHARI, RAJKOT, Rajkot, Gujarat, 360110")
         //                 .setFontSize(9).setFontColor(TEXT_DARK))
-        //         .add(new Paragraph("E-mail: severalpolymers@gmail.com | Mo. 7490044572")
+        //         .add(new Paragraph("E-mail: severalpolymers@gmail.com")
         //                 .setFontSize(9).setFontColor(TEXT_DARK))
         //         .add(new Paragraph("GST NO.24DMAPP6011D1ZL").setFontSize(9).setBold().setFontColor(SECONDARY_COLOR));
         // infoCell.setBorder(Border.NO_BORDER).setPadding(2).setTextAlignment(TextAlignment.RIGHT);
@@ -179,12 +179,14 @@ public class QuotationPdfGenerationService {
         addDetailPair(detailsTable,
                 "Quote Number", formatValue(data.get("quoteNumber")),
                 "Quote Date", formatValue(data.get("quoteDate")),
-                "Reference Name", formatValue(data.get("referenceName")));
+                "Reference Name", formatValue(data.get("referenceName")),
+                "Case Number", formatValue(data.get("caseNumber")));
 
         // Row 2: Valid Until | Mobile No.
-        addTwoDetailPair(detailsTable,
+        addThreeDetailPair(detailsTable,
                 "Valid Until", formatValue(data.get("validUntil")),
-                "Mobile No.", formatValue(data.get("contactNumber")));
+                "Mobile No.", formatValue(data.get("contactNumber")),
+                "Transport Name", formatValue(data.get("transportMasterName")));
         
         infoCell.add(customerName)
                 .add(customerAddress)
@@ -226,7 +228,8 @@ public class QuotationPdfGenerationService {
         table.addCell(valueCell);
     }
 
-    private void addDetailPair(Table table, String label1, String value1, String label2, String value2, String label3, String value3) {
+    private void addDetailPair(Table table, String label1, String value1, String label2, String value2, String label3, String value3,
+    String label4, String value4) {
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label1 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
@@ -239,11 +242,15 @@ public class QuotationPdfGenerationService {
                 .add(new Paragraph(label3 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
                 .add(new Paragraph(value3).setFontSize(9).setFontColor(TEXT_DARK)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(label4 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(value4).setFontSize(9).setFontColor(TEXT_DARK)));
     }
 
     
 
-    private void addTwoDetailPair(Table table, String label1, String value1, String label2, String value2) {
+    private void addThreeDetailPair(Table table, String label1, String value1, String label2, String value2, String label3, String value3) {
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
                 .add(new Paragraph(label1 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
@@ -252,6 +259,10 @@ public class QuotationPdfGenerationService {
                 .add(new Paragraph(label2 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
         table.addCell(new Cell().setBorder(Border.NO_BORDER)
                 .add(new Paragraph(value2).setFontSize(9).setFontColor(TEXT_DARK)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(label3 + ":").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR)));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .add(new Paragraph(value3).setFontSize(9).setFontColor(TEXT_DARK)));
     }
 
     private void addItemsTable(Document document, List<Map<String, Object>> items, Map<String, Object> quotationData) {
@@ -294,6 +305,9 @@ public class QuotationPdfGenerationService {
         AtomicInteger counter = new AtomicInteger(1);
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal totalTax = BigDecimal.ZERO;
+        BigDecimal totalRolls = BigDecimal.ZERO;
+        BigDecimal totalQuantity = BigDecimal.ZERO;
+        BigDecimal totalFinalAmount = BigDecimal.ZERO;
 
         for (Map<String, Object> item : items) {
             boolean isEvenRow = counter.get() % 2 == 0;
@@ -308,6 +322,7 @@ public class QuotationPdfGenerationService {
                     .setBackgroundColor(rowColor));
                     
             // NUMBER OF ROLL
+            BigDecimal numberOfRolls = toBigDecimal(item.get("numberOfRoll"));
             table.addCell(new Cell()
                     .add(new Paragraph(formatValue(item.get("numberOfRoll"))).setFontSize(8))
                     .setBackgroundColor(rowColor));
@@ -320,7 +335,7 @@ public class QuotationPdfGenerationService {
             // QUANTITY
             BigDecimal quantity = toBigDecimal(item.get("quantity"));
             table.addCell(new Cell()
-                    .add(new Paragraph(quantity.setScale(0, RoundingMode.DOWN).toString()).setFontSize(8))
+                    .add(new Paragraph(quantity.toString()).setFontSize(8))
                     .setBackgroundColor(rowColor));
 
             // UNIT PRICE
@@ -348,9 +363,16 @@ public class QuotationPdfGenerationService {
                     .add(new Paragraph(finalPrice.toPlainString()).setFontSize(8))
                     .setBackgroundColor(rowColor));
 
+            // Accumulate totals
             totalAmount = totalAmount.add(itemPrice);
             totalTax = totalTax.add(gstAmount);
+            totalRolls = totalRolls.add(numberOfRolls);
+            totalQuantity = totalQuantity.add(quantity);
+            totalFinalAmount = totalFinalAmount.add(finalPrice);
         }
+
+        // Add totals row
+        addTotalsRow(table, totalRolls, totalQuantity, totalAmount, totalTax, totalFinalAmount);
 
         document.add(table);
 
@@ -396,6 +418,71 @@ public class QuotationPdfGenerationService {
         document.add(summaryTable);
     }
     
+    private void addTotalsRow(Table table, BigDecimal totalRolls, BigDecimal totalQuantity, 
+                             BigDecimal totalAmount, BigDecimal totalTax, BigDecimal totalFinalAmount) {
+        // Create a distinctive totals row with bold styling
+        Color totalsRowColor = new DeviceRgb(240, 248, 255); // Light blue background
+        
+        // Column 1: "TOTAL" label
+        table.addCell(new Cell()
+                .add(new Paragraph("TOTAL").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1)));
+        
+        // Column 2: Empty (Item Name column)
+        table.addCell(new Cell()
+                .add(new Paragraph("").setFontSize(8))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1)));
+        
+        // Column 3: Total Number of Rolls
+        table.addCell(new Cell()
+                .add(new Paragraph(totalRolls.setScale(0, RoundingMode.HALF_UP).toString()).setBold().setFontSize(8).setFontColor(TEXT_DARK))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
+                .setTextAlignment(TextAlignment.CENTER));
+        
+        // Column 4: Empty (Weight per Roll column)
+        table.addCell(new Cell()
+                .add(new Paragraph("").setFontSize(8))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1)));
+        
+        // Column 5: Total Quantity
+        table.addCell(new Cell()
+                .add(new Paragraph(totalQuantity.toString()).setBold().setFontSize(8).setFontColor(TEXT_DARK))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
+                .setTextAlignment(TextAlignment.CENTER));
+        
+        // Column 6: Empty (Unit Price column)
+        table.addCell(new Cell()
+                .add(new Paragraph("").setFontSize(8))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1)));
+        
+        // Column 7: Total Amount (pre-tax)
+        table.addCell(new Cell()
+                .add(new Paragraph(totalAmount.toPlainString()).setBold().setFontSize(8).setFontColor(TEXT_DARK))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
+                .setTextAlignment(TextAlignment.RIGHT));
+        
+        // Column 8: Total GST
+        table.addCell(new Cell()
+                .add(new Paragraph(totalTax.toPlainString()).setBold().setFontSize(8).setFontColor(TEXT_DARK))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
+                .setTextAlignment(TextAlignment.RIGHT));
+        
+        // Column 9: Total Final Amount
+        table.addCell(new Cell()
+                .add(new Paragraph(totalFinalAmount.toPlainString()).setBold().setFontSize(8).setFontColor(PRIMARY_COLOR))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
+                .setTextAlignment(TextAlignment.RIGHT));
+    }
+
     private void addTotalRow(Table table, String label, String value, boolean isGrandTotal) {
         Cell labelCell = new Cell()
                 .add(new Paragraph(label)
@@ -688,7 +775,7 @@ public class QuotationPdfGenerationService {
                 
         // Center - Contact information
         Cell contactCell = new Cell()
-                .add(new Paragraph("Several Polymers [ Mo. - 7490044572 ]")
+                .add(new Paragraph("Several Polymers")
                         .setFontSize(7)
                         .setFontColor(TEXT_LIGHT))
                 .setBorder(Border.NO_BORDER)

@@ -26,6 +26,7 @@ public class QuotationDto {
     private String quoteNumber;
     private BigDecimal totalAmount;
     private String status;
+    private List<String> quotationStatus;
     private Long transportMasterId;
     private String caseNumber;
     private BigDecimal packagingAndForwadingCharges;
