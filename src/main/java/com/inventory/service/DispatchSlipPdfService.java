@@ -289,8 +289,8 @@ public class DispatchSlipPdfService {
 
         // Add items with alternating row colors for look
         AtomicInteger counter = new AtomicInteger(1);
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        BigDecimal totalTax = BigDecimal.ZERO;
+        BigDecimal totalRolls = BigDecimal.ZERO;
+        BigDecimal totalQuantity = BigDecimal.ZERO;
 
         for (Map<String, Object> item : items) {
             boolean isEvenRow = counter.get() % 2 == 0;
@@ -305,6 +305,7 @@ public class DispatchSlipPdfService {
                     .setBackgroundColor(rowColor));
                     
             // NUMBER OF ROLL
+            BigDecimal numberOfRolls = toBigDecimal(item.get("numberOfRoll"));
             table.addCell(new Cell()
                     .add(new Paragraph(formatValue(item.get("numberOfRoll"))).setFontSize(8))
                     .setBackgroundColor(rowColor));
@@ -317,9 +318,38 @@ public class DispatchSlipPdfService {
             // QUANTITY
             BigDecimal quantity = toBigDecimal(item.get("quantity"));
             table.addCell(new Cell()
-                    .add(new Paragraph(quantity.setScale(0, RoundingMode.DOWN).toString()).setFontSize(8))
+                    .add(new Paragraph(quantity.toString()).setFontSize(8))
                     .setBackgroundColor(rowColor));
+
+            // accumulate totals
+            totalRolls = totalRolls.add(numberOfRolls);
+            totalQuantity = totalQuantity.add(quantity);
         }
+
+        // Add totals row at the end: TOTAL label, empty, total rolls, empty, total quantity
+        Color totalsRowColor = new DeviceRgb(240, 248, 255);
+        table.addCell(new Cell()
+                .add(new Paragraph("TOTAL").setBold().setFontSize(9).setFontColor(SECONDARY_COLOR))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1)));
+        table.addCell(new Cell()
+                .add(new Paragraph("").setFontSize(8))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1)));
+        table.addCell(new Cell()
+                .add(new Paragraph(totalRolls.setScale(0, RoundingMode.HALF_UP).toString()).setBold().setFontSize(8).setFontColor(TEXT_DARK))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
+                .setTextAlignment(TextAlignment.CENTER));
+        table.addCell(new Cell()
+                .add(new Paragraph("").setFontSize(8))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1)));
+        table.addCell(new Cell()
+                .add(new Paragraph(totalQuantity.toString()).setBold().setFontSize(8).setFontColor(TEXT_DARK))
+                .setBackgroundColor(totalsRowColor)
+                .setBorder(new SolidBorder(SECONDARY_COLOR, 1))
+                .setTextAlignment(TextAlignment.CENTER));
 
         document.add(table);
 
