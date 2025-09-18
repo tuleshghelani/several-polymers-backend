@@ -151,18 +151,20 @@ public class SalePdfGenerationService {
                 .setMarginBottom(5);
         document.add(itemsTitle);
 
-        Table table = new Table(new float[]{1, 5, 2, 2, 2, 2, 2})
+        Table table = new Table(new float[]{1, 5, 2, 2, 2, 2, 2, 2, 2})
                 .useAllAvailableWidth()
                 .setMarginTop(2);
 
         Stream.of(
                 "No.",
                 "Item Name",
-                "Quantity",
-                "Pcs",
                 "Weight per roll",
+                "Pcs",
+                "Quantity",
                 "Unit Price",
-                "Amount"
+                "Amount",
+                "Tax Amount",
+                "Total Amount"
         ).forEach(title -> table.addHeaderCell(
                 new Cell().add(new Paragraph(title).setFontSize(9))
                         .setBackgroundColor(SECONDARY_COLOR)
@@ -174,6 +176,9 @@ public class SalePdfGenerationService {
         AtomicInteger counter = new AtomicInteger(1);
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal totalTax = BigDecimal.ZERO;
+        BigDecimal totalQuantity = BigDecimal.ZERO;
+        int totalPcs = 0;
+        BigDecimal totalFinalAmount = BigDecimal.ZERO;
 
         for (Map<String, Object> item : items) {
             boolean isEvenRow = counter.get() % 2 == 0;
@@ -189,14 +194,32 @@ public class SalePdfGenerationService {
 
             table.addCell(new Cell().add(new Paragraph(String.valueOf(counter.getAndIncrement())).setFontSize(8)).setBackgroundColor(rowColor));
             table.addCell(new Cell().add(new Paragraph(formatValue(item.get("productName"))).setFontSize(8)).setBackgroundColor(rowColor));
-            table.addCell(new Cell().add(new Paragraph(quantity.setScale(0, RoundingMode.DOWN).toString()).setFontSize(8)).setBackgroundColor(rowColor));
-            table.addCell(new Cell().add(new Paragraph(String.valueOf(numberOfRoll)).setFontSize(8)).setBackgroundColor(rowColor));
             table.addCell(new Cell().add(new Paragraph(weightPerRoll.setScale(3, RoundingMode.HALF_UP).toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
+            table.addCell(new Cell().add(new Paragraph(String.valueOf(numberOfRoll)).setFontSize(8)).setBackgroundColor(rowColor));
+            table.addCell(new Cell().add(new Paragraph(String.valueOf(quantity)).setFontSize(8)).setBackgroundColor(rowColor));
             table.addCell(new Cell().add(new Paragraph(unitPrice.toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
             table.addCell(new Cell().add(new Paragraph(amount.setScale(2, RoundingMode.HALF_UP).toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
+            table.addCell(new Cell().add(new Paragraph(gstAmount.setScale(2, RoundingMode.HALF_UP).toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
+            table.addCell(new Cell().add(new Paragraph(finalPrice.setScale(2, RoundingMode.HALF_UP).toPlainString()).setFontSize(8)).setBackgroundColor(rowColor));
 
             subtotal = subtotal.add(amount);
+            totalTax = totalTax.add(gstAmount);
+            totalQuantity = totalQuantity.add(quantity);
+            totalPcs += numberOfRoll;
+            totalFinalAmount = totalFinalAmount.add(finalPrice);
         }
+
+        // Totals row
+        Color totalsBg = SECONDARY_LIGHT;
+        table.addCell(new Cell().add(new Paragraph("").setFontSize(8)).setBackgroundColor(totalsBg));
+        table.addCell(new Cell().add(new Paragraph("TOTAL").setBold().setFontSize(8)).setBackgroundColor(totalsBg));
+        table.addCell(new Cell().add(new Paragraph("").setFontSize(8)).setBackgroundColor(totalsBg));
+        table.addCell(new Cell().add(new Paragraph(String.valueOf(totalPcs)).setBold().setFontSize(8)).setBackgroundColor(totalsBg));
+        table.addCell(new Cell().add(new Paragraph(String.valueOf(totalQuantity)).setBold().setFontSize(8)).setBackgroundColor(totalsBg));
+        table.addCell(new Cell().add(new Paragraph("").setFontSize(8)).setBackgroundColor(totalsBg));
+        table.addCell(new Cell().add(new Paragraph(subtotal.setScale(2, RoundingMode.HALF_UP).toPlainString()).setBold().setFontSize(8)).setBackgroundColor(totalsBg));
+        table.addCell(new Cell().add(new Paragraph(totalTax.setScale(2, RoundingMode.HALF_UP).toPlainString()).setBold().setFontSize(8)).setBackgroundColor(totalsBg));
+        table.addCell(new Cell().add(new Paragraph(totalFinalAmount.setScale(2, RoundingMode.HALF_UP).toPlainString()).setBold().setFontSize(8)).setBackgroundColor(totalsBg));
 
         document.add(table);
 
