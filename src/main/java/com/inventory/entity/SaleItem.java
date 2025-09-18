@@ -43,6 +43,15 @@ public class SaleItem {
     @Column(name = "discount_amount", precision = 19, scale = 2, columnDefinition = "decimal(19,2) DEFAULT 0")
     private BigDecimal discountAmount;
     
+    @Column(name = "discount_price", precision = 19, scale = 2, columnDefinition = "NUMERIC(19, 2) DEFAULT 0.00")
+    private BigDecimal discountPrice = BigDecimal.ZERO;
+
+    @Column(name = "tax_percentage", precision = 5, scale = 2, columnDefinition = "NUMERIC(5, 2) DEFAULT 0.00")
+    private BigDecimal taxPercentage = BigDecimal.ZERO;
+
+    @Column(name = "tax_amount", precision = 19, scale = 2, columnDefinition = "NUMERIC(19, 2) DEFAULT 0.00")
+    private BigDecimal taxAmount = BigDecimal.ZERO;
+
     @Column(name = "final_price", nullable = false, precision = 19, scale = 2)
     private BigDecimal finalPrice;
 

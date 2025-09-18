@@ -82,17 +82,28 @@ public class SaleService {
             }
             sale.setCaseNumber(request.getCaseNumber());
             sale.setReferenceName(request.getReferenceName());
+            // set sale-level discount inputs (from API)
+            if (request.getSaleDiscountPercentage() != null) {
+                sale.setSaleDiscountPercentage(request.getSaleDiscountPercentage());
+            }
+            if (request.getSaleDiscountAmount() != null) {
+                sale.setSaleDiscountAmount(request.getSaleDiscountAmount());
+            }
             sale = saleRepository.save(sale);
             
             // Process items in batches
             List<SaleItem> items = new ArrayList<>();
             BigDecimal totalAmount = BigDecimal.ZERO;
+            BigDecimal aggregatedSaleDiscountAmount = BigDecimal.ZERO;
 
             for (SaleItemDto itemDto : request.getProducts()) {
-                SaleItem item = createSaleItem(itemDto, sale);
+                SaleItem item = createSaleItem(itemDto, sale, request.getSaleDiscountPercentage());
                 items.add(item);
                 saleItemRepository.save(item);
                 totalAmount = totalAmount.add(item.getFinalPrice());
+                if (item.getDiscountAmount() != null) {
+                    aggregatedSaleDiscountAmount = aggregatedSaleDiscountAmount.add(item.getDiscountAmount());
+                }
                productQuantityService.updateProductQuantity(
                        item.getProduct().getId(),
                        item.getQuantity(),
@@ -105,6 +116,9 @@ public class SaleService {
             // Round the total amount
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             sale.setTotalSaleAmount(totalAmount);
+            if (request.getSaleDiscountPercentage() != null && request.getSaleDiscountPercentage().compareTo(BigDecimal.ZERO) > 0) {
+                sale.setSaleDiscountAmount(aggregatedSaleDiscountAmount.setScale(2, RoundingMode.HALF_UP));
+            }
             sale = saleRepository.save(sale);
             
             // Update customer remaining payment amount (add sale amount)
@@ -175,6 +189,8 @@ public class SaleService {
                         com.inventory.entity.TransportMaster.class, request.getTransportMasterId()));
             }
             sale.setCaseNumber(request.getCaseNumber());
+            sale.setSaleDiscountPercentage(parentQuotation.getQuotationDiscountPercentage());
+            sale.setSaleDiscountAmount(parentQuotation.getQuotationDiscountAmount());
             sale.setReferenceName(request.getReferenceName());
 
             // Generate invoice number
@@ -184,8 +200,11 @@ public class SaleService {
             sale = saleRepository.save(sale);
 
             BigDecimal totalAmount = BigDecimal.ZERO;
-
+            BigDecimal totalSaleDiscountAmount = BigDecimal.ZERO;
             for (QuotationItem qi : quotationItems) {
+                if (qi.getQuotationItemStatus().equals(QuotationStatusItem.B.value)) {
+                    throw new ValidationException("Quotation item already billed");
+                }
                 qi.setQuotationItemStatus(QuotationStatusItem.B.value);
                 quotationItemRepository.save(qi);
 
@@ -196,6 +215,12 @@ public class SaleService {
                 item.setQuantity(qi.getQuantity());
                 item.setRemarks(qi.getRemarks());
                 item.setUnitPrice(qi.getUnitPrice());
+                item.setDiscountPrice(qi.getDiscountPrice());
+                item.setTaxPercentage(qi.getTaxPercentage());
+                item.setTaxAmount(qi.getTaxAmount());
+                // Map quotation discount on GST to sale's discount fields
+                item.setDiscountPercentage(qi.getQuotationDiscountPercentage());
+                item.setDiscountAmount(qi.getQuotationDiscountAmount());
                 item.setFinalPrice(qi.getFinalPrice());
                 item.setQuotationItem(qi);
                 item.setClient(currentUser.getClient());
@@ -203,7 +228,8 @@ public class SaleService {
                 item.setWeightPerRoll(qi.getWeightPerRoll());
 
                 saleItemRepository.save(item);
-                totalAmount = totalAmount.add(item.getFinalPrice());
+                totalAmount = totalAmount.add(qi.getFinalPrice());
+                totalSaleDiscountAmount = totalSaleDiscountAmount.add(qi.getQuotationDiscountAmount());
 
                 // Reduce product stock, since this is a sale
                 productQuantityService.updateProductQuantity(
@@ -217,6 +243,7 @@ public class SaleService {
 
             totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
             sale.setTotalSaleAmount(totalAmount);
+            sale.setSaleDiscountAmount(totalSaleDiscountAmount);
             sale.setUpdatedAt(OffsetDateTime.now());
             saleRepository.save(sale);
 
@@ -253,7 +280,7 @@ public class SaleService {
         }
     }
     
-    private SaleItem createSaleItem(SaleItemDto dto, Sale sale) {
+    private SaleItem createSaleItem(SaleItemDto dto, Sale sale, BigDecimal saleDiscountPercentage) {
         Product product = productRepository.findById(dto.getProductId())
             .orElseThrow(() -> new ValidationException("Product not found"));
             
@@ -271,16 +298,43 @@ public class SaleService {
             item.setWeightPerRoll(dto.getWeightPerRoll());
         }
         
-        // Calculate amounts with 2 decimal places
-        BigDecimal subTotal = dto.getUnitPrice()
-            .multiply((dto.getQuantity()))
+        // Calculate amounts following QuotationItem logic:
+        // 1) discountPrice = unitPrice * quantity (no per-line discount on item)
+        BigDecimal discountPrice = dto.getUnitPrice()
+            .multiply(dto.getQuantity())
             .setScale(2, RoundingMode.HALF_UP);
-            
-        BigDecimal discountAmount = calculateDiscountAmount(subTotal, dto.getDiscountPercentage())
-            .setScale(2, RoundingMode.HALF_UP);
-        
-//        item.setDiscountAmount(discountAmount);
-        item.setFinalPrice(subTotal.subtract(discountAmount).setScale(2, RoundingMode.HALF_UP));
+        item.setDiscountPrice(discountPrice);
+
+        // 2) taxPercentage from product if not supplied
+        BigDecimal taxPercentage = product.getTaxPercentage() != null ? product.getTaxPercentage() : BigDecimal.ZERO;
+        item.setTaxPercentage(taxPercentage);
+
+        // 3) baseTax = discountPrice * taxPercentage / 100
+        BigDecimal baseTaxAmount = calculatePercentageAmount(discountPrice, taxPercentage)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        // 4) Apply discount on tax (GST) using sale-level percentage if provided; else use item-level
+        BigDecimal discountAmountOnTax = BigDecimal.ZERO;
+        if (saleDiscountPercentage != null && saleDiscountPercentage.compareTo(BigDecimal.ZERO) > 0) {
+            item.setDiscountPercentage(saleDiscountPercentage);
+            discountAmountOnTax = calculatePercentageAmount(baseTaxAmount, saleDiscountPercentage)
+                    .setScale(2, RoundingMode.HALF_UP);
+            item.setDiscountAmount(discountAmountOnTax);
+        } else if (dto.getDiscountPercentage() != null && dto.getDiscountPercentage().compareTo(BigDecimal.ZERO) > 0) {
+            item.setDiscountPercentage(dto.getDiscountPercentage());
+            discountAmountOnTax = calculatePercentageAmount(baseTaxAmount, dto.getDiscountPercentage())
+                    .setScale(2, RoundingMode.HALF_UP);
+            item.setDiscountAmount(discountAmountOnTax);
+        } else if (dto.getDiscountAmount() != null && dto.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
+            discountAmountOnTax = dto.getDiscountAmount().min(baseTaxAmount).setScale(2, RoundingMode.HALF_UP);
+            item.setDiscountAmount(discountAmountOnTax);
+        }
+
+        BigDecimal taxAmount = baseTaxAmount.subtract(discountAmountOnTax).setScale(2, RoundingMode.HALF_UP);
+        item.setTaxAmount(taxAmount);
+
+        // 5) finalPrice = discountPrice + taxAmount
+        item.setFinalPrice(discountPrice.add(taxAmount).setScale(2, RoundingMode.HALF_UP));
 //        item.setRemainingQuantity(dto.getQuantity());
         item.setClient(sale.getClient());
         
@@ -292,6 +346,14 @@ public class SaleService {
             base.multiply(percentage)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP) : 
             BigDecimal.ZERO;
+    }
+    
+    private BigDecimal calculatePercentageAmount(BigDecimal base, BigDecimal percentage) {
+        if (base == null || percentage == null) {
+            return BigDecimal.ZERO;
+        }
+        return base.multiply(percentage)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
     
     @Transactional(readOnly = true)
@@ -438,16 +500,30 @@ public class SaleService {
         }
         existingSale.setCaseNumber(request.getCaseNumber());
         existingSale.setReferenceName(request.getReferenceName());
+        if (request.getSaleDiscountPercentage() != null) {
+            existingSale.setSaleDiscountPercentage(request.getSaleDiscountPercentage());
+        } else {
+            existingSale.setSaleDiscountPercentage(java.math.BigDecimal.ZERO);
+        }
+        if (request.getSaleDiscountAmount() != null) {
+            existingSale.setSaleDiscountAmount(request.getSaleDiscountAmount());
+        } else {
+            existingSale.setSaleDiscountAmount(java.math.BigDecimal.ZERO);
+        }
         existingSale.setUpdatedAt(OffsetDateTime.now());
         // Process new items
         List<SaleItem> newItems = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal aggregatedSaleDiscountAmount = BigDecimal.ZERO;
         
         for (SaleItemDto itemDto : request.getProducts()) {
-            SaleItem item = createSaleItem(itemDto, existingSale);
+            SaleItem item = createSaleItem(itemDto, existingSale, request.getSaleDiscountPercentage());
             newItems.add(item);
             saleItemRepository.save(item);
             totalAmount = totalAmount.add(item.getFinalPrice());
+            if (item.getDiscountAmount() != null) {
+                aggregatedSaleDiscountAmount = aggregatedSaleDiscountAmount.add(item.getDiscountAmount());
+            }
 
             productQuantityService.updateProductQuantity(
                 item.getProduct().getId(),
@@ -461,6 +537,7 @@ public class SaleService {
         // Round the total amount
         totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
         existingSale.setTotalSaleAmount(totalAmount);
+        existingSale.setSaleDiscountAmount(aggregatedSaleDiscountAmount.setScale(2, RoundingMode.HALF_UP));
         saleRepository.save(existingSale);
         
         // Handle customer payment amount changes

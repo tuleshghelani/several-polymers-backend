@@ -68,6 +68,12 @@ public class Sale {
     @Column(name = "reference_name", length = 256)
     private String referenceName;
     
+    @Column(name = "sale_discount_percentage", precision = 5, scale = 2, columnDefinition = "NUMERIC(5, 2) DEFAULT 0.00")
+    private BigDecimal saleDiscountPercentage = BigDecimal.ZERO;
+
+    @Column(name = "sale_discount_amount", precision = 19, scale = 2, columnDefinition = "NUMERIC(19, 2) DEFAULT 0.00")
+    private BigDecimal saleDiscountAmount = BigDecimal.ZERO;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "id", 
         foreignKey = @ForeignKey(name = "fk_sale_created_by_user_master_id"))

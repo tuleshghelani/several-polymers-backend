@@ -17,6 +17,9 @@ public class SaleItemDto {
     private BigDecimal unitPrice;
     private BigDecimal discountPercentage;
     private BigDecimal discountAmount;
+    private BigDecimal discountPrice;
+    private BigDecimal taxPercentage;
+    private BigDecimal taxAmount;
     private BigDecimal finalPrice;
     private Long clientId;
     private String remarks;

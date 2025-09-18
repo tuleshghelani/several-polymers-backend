@@ -26,4 +26,6 @@ public class SaleRequestDto {
     private Long transportMasterId;
     private String caseNumber;
     private String referenceName;
+    private java.math.BigDecimal saleDiscountPercentage;
+    private java.math.BigDecimal saleDiscountAmount;
 }

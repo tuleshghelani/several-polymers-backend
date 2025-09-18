@@ -56,6 +56,7 @@ public class SaleDao {
             setQueryParameters(query, countQueryObj, params, dto);
 
             Long totalCount = ((Number) countQueryObj.getSingleResult()).longValue();
+            @SuppressWarnings("unchecked")
             List<Object[]> results = query.getResultList();
             List<Map<String, Object>> sales = transformResults(results);
 
@@ -144,13 +145,14 @@ public class SaleDao {
     }
 
     public Map<String, Object> getSaleDetail(Long saleId, Long clientId) {
-        String sql = """
+            String sql = """
             SELECT 
                 s.id, s.invoice_number, s.sale_date, s.total_sale_amount,
                 s.created_at, s.updated_at, s.customer_id, s.created_by, s.is_black,
                 s.transport_master_id, s.case_number, s.reference_name,
+                s.sale_discount_percentage, s.sale_discount_amount,
                 si.id as item_id, si.quantity, si.unit_price, si.discount_percentage,
-                si.discount_amount, si.final_price, 
+                si.discount_amount, si.discount_price, si.tax_percentage, si.tax_amount, si.final_price, 
                 si.product_id, si.remarks, si.number_of_roll, si.weight_per_roll
             FROM (SELECT * FROM sale WHERE id = :saleId AND client_id = :clientId) s
             LEFT JOIN (SELECT * FROM sale_items si WHERE sale_id = :saleId) si ON s.id = si.sale_id
@@ -161,6 +163,7 @@ public class SaleDao {
             .setParameter("saleId", saleId)
             .setParameter("clientId", clientId);
 
+        @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
         return transformToDetailResponse(results);
     }
@@ -171,6 +174,7 @@ public class SaleDao {
                 s.id, s.invoice_number, s.sale_date, s.total_sale_amount,
                 c.name as customer_name, c.address, c.mobile, c.gst,
                 si.id as item_id, si.quantity, si.unit_price, si.discount_amount,
+                si.discount_price, si.tax_percentage, si.tax_amount,
                 p.name as product_name, p.tax_percentage,
                 si.number_of_roll, si.weight_per_roll,
                 s.transport_master_id, s.case_number, s.reference_name
@@ -185,6 +189,7 @@ public class SaleDao {
                 .setParameter("saleId", saleId)
                 .setParameter("clientId", clientId);
 
+        @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
         return transformToPdfDetail(results);
     }
@@ -212,17 +217,17 @@ public class SaleDao {
             BigDecimal quantity = toBigDecimal(row[9]);
             BigDecimal unitPrice = toBigDecimal(row[10]);
             BigDecimal discountAmount = toBigDecimal(row[11]);
-            String productName = Objects.toString(row[12], "");
+            BigDecimal discountPrice = toBigDecimal(row[12]);
             BigDecimal taxPercentage = toBigDecimal(row[13]);
-            Integer numberOfRoll = row[14] != null ? ((Number) row[14]).intValue() : 0;
-            BigDecimal weightPerRoll = toBigDecimal(row[15]);
+            BigDecimal taxAmount = toBigDecimal(row[14]);
+            String productName = Objects.toString(row[15], "");
+            BigDecimal productTaxPercentage = toBigDecimal(row[16]);
+            Integer numberOfRoll = row[17] != null ? ((Number) row[17]).intValue() : 0;
+            BigDecimal weightPerRoll = toBigDecimal(row[18]);
 
-            BigDecimal price = unitPrice.multiply(quantity);
-            if (discountAmount != null) {
-                price = price.subtract(discountAmount);
-            }
-            // To avoid disturbing existing accounting, compute tax as 0 for now
-            BigDecimal taxAmount = BigDecimal.ZERO;
+            BigDecimal price = discountPrice.compareTo(BigDecimal.ZERO) > 0
+                    ? discountPrice
+                    : unitPrice.multiply(quantity);
             BigDecimal finalPrice = price.add(taxAmount);
 
             Map<String, Object> item = new HashMap<>();
@@ -275,23 +280,28 @@ public class SaleDao {
         response.put("transportMasterId", firstRow[9]);
         response.put("caseNumber", firstRow[10]);
         response.put("referenceName", firstRow[11]);
+        response.put("saleDiscountPercentage", firstRow[12] != null ? firstRow[12] : BigDecimal.ZERO);
+        response.put("saleDiscountAmount", firstRow[13] != null ? firstRow[13] : BigDecimal.ZERO);
 
         // Set items
         List<Map<String, Object>> items = new ArrayList<>();
         for (Object[] row : results) {
-            if (row[12] != null) { // if item exists
-                items.add(Map.of(
-                    "id", row[12],
-                    "quantity", row[13] != null ? row[13] : 0,
-                    "unitPrice", row[14] != null ? row[14] : BigDecimal.ZERO,
-                    "discountPercentage", row[15] != null ? row[15] : 0,
-                    "discountAmount", row[16] != null ? row[16] : BigDecimal.ZERO,
-                    "finalPrice", row[17] != null ? row[17] : BigDecimal.ZERO,
-                    "productId", row[18],
-                    "remarks", row[19] != null ? row[19] : "",
-                    "numberOfRoll", row[20] != null ? row[20] : 0,
-                    "weightPerRoll", row[21] != null ? row[21] : BigDecimal.ZERO
-                ));
+            if (row[14] != null) { // if item exists
+                Map<String, Object> itemMap = new HashMap<>();
+                itemMap.put("id", row[14]);
+                itemMap.put("quantity", row[15] != null ? row[15] : 0);
+                itemMap.put("unitPrice", row[16] != null ? row[16] : BigDecimal.ZERO);
+                itemMap.put("discountPercentage", row[17] != null ? row[17] : 0);
+                itemMap.put("discountAmount", row[18] != null ? row[18] : BigDecimal.ZERO);
+                itemMap.put("discountPrice", row[19] != null ? row[19] : BigDecimal.ZERO);
+                itemMap.put("taxPercentage", row[20] != null ? row[20] : BigDecimal.ZERO);
+                itemMap.put("taxAmount", row[21] != null ? row[21] : BigDecimal.ZERO);
+                itemMap.put("finalPrice", row[22] != null ? row[22] : BigDecimal.ZERO);
+                itemMap.put("productId", row[23]);
+                itemMap.put("remarks", row[24] != null ? row[24] : "");
+                itemMap.put("numberOfRoll", row[25] != null ? row[25] : 0);
+                itemMap.put("weightPerRoll", row[26] != null ? row[26] : BigDecimal.ZERO);
+                items.add(itemMap);
             }
         }
         response.put("items", items);
