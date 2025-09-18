@@ -173,6 +173,7 @@ public class SaleDao {
             SELECT 
                 s.id, s.invoice_number, s.sale_date, s.total_sale_amount,
                 c.name as customer_name, c.address, c.mobile, c.gst,
+                s.sale_discount_percentage, s.sale_discount_amount,
                 si.id as item_id, si.quantity, si.unit_price, si.discount_amount,
                 si.discount_price, si.tax_percentage, si.tax_amount,
                 p.name as product_name, p.tax_percentage,
@@ -210,20 +211,22 @@ public class SaleDao {
         response.put("address", first[5]);
         response.put("contactNumber", first[6]);
         response.put("customerGst", first[7]);
+        response.put("saleDiscountPercentage", first[8] != null ? first[8] : BigDecimal.ZERO);
+        response.put("saleDiscountAmount", first[9] != null ? first[9] : BigDecimal.ZERO);
 
         List<Map<String, Object>> items = new ArrayList<>();
         for (Object[] row : results) {
-            if (row[8] == null) continue; // no item
-            BigDecimal quantity = toBigDecimal(row[9]);
-            BigDecimal unitPrice = toBigDecimal(row[10]);
-            BigDecimal discountAmount = toBigDecimal(row[11]);
-            BigDecimal discountPrice = toBigDecimal(row[12]);
-            BigDecimal taxPercentage = toBigDecimal(row[13]);
-            BigDecimal taxAmount = toBigDecimal(row[14]);
-            String productName = Objects.toString(row[15], "");
-            BigDecimal productTaxPercentage = toBigDecimal(row[16]);
-            Integer numberOfRoll = row[17] != null ? ((Number) row[17]).intValue() : 0;
-            BigDecimal weightPerRoll = toBigDecimal(row[18]);
+            if (row[10] == null) continue; // no item (shifted due to 2 new columns)
+            BigDecimal quantity = toBigDecimal(row[11]);
+            BigDecimal unitPrice = toBigDecimal(row[12]);
+            BigDecimal discountAmount = toBigDecimal(row[13]);
+            BigDecimal discountPrice = toBigDecimal(row[14]);
+            BigDecimal taxPercentage = toBigDecimal(row[15]);
+            BigDecimal taxAmount = toBigDecimal(row[16]);
+            String productName = Objects.toString(row[17], "");
+            BigDecimal productTaxPercentage = toBigDecimal(row[18]);
+            Integer numberOfRoll = row[19] != null ? ((Number) row[19]).intValue() : 0;
+            BigDecimal weightPerRoll = toBigDecimal(row[20]);
 
             BigDecimal price = discountPrice.compareTo(BigDecimal.ZERO) > 0
                     ? discountPrice
@@ -231,7 +234,7 @@ public class SaleDao {
             BigDecimal finalPrice = price.add(taxAmount);
 
             Map<String, Object> item = new HashMap<>();
-            item.put("id", row[8]);
+            item.put("id", row[10]);
             item.put("productName", productName);
             item.put("quantity", quantity);
             item.put("unitPrice", unitPrice);
@@ -246,9 +249,9 @@ public class SaleDao {
         response.put("items", items);
 
         // transport and references (placed at root for now)
-        response.put("transportMasterId", first[16]);
-        response.put("caseNumber", first[17]);
-        response.put("referenceName", first[18]);
+        response.put("transportMasterId", first[21]);
+        response.put("caseNumber", first[22]);
+        response.put("referenceName", first[23]);
 
         return response;
     }

@@ -51,7 +51,7 @@ public class SalePdfGenerationService {
             addPageFooter(pdf, document, 1);
 
             addSaleDetails(document, saleData);
-            addItemsTable(document, (List<Map<String, Object>>) saleData.get("items"));
+            addItemsTable(document, (List<Map<String, Object>>) saleData.get("items"), saleData);
             addPageFooter(pdf, document, 2);
 
             addTerms(document);
@@ -141,7 +141,7 @@ public class SalePdfGenerationService {
         }
     }
 
-    private void addItemsTable(Document document, List<Map<String, Object>> items) {
+    private void addItemsTable(Document document, List<Map<String, Object>> items, Map<String, Object> saleData) {
         document.add(new Paragraph("\n"));
 
         Paragraph itemsTitle = new Paragraph("Items & Services")
@@ -231,7 +231,20 @@ public class SalePdfGenerationService {
 
         Cell totalsCell = new Cell();
         Table totalsTable = new Table(2).useAllAvailableWidth();
-
+        // SUBTOTAL (pre-tax amount)
+        addTotalRow(totalsTable, "SUBTOTAL", subtotal.setScale(2, RoundingMode.HALF_UP).toPlainString() + "/-", false);
+        // Sale discount
+        BigDecimal saleDiscountPercentage = toBigDecimal(saleData.get("saleDiscountPercentage"));
+        BigDecimal saleDiscountAmount = toBigDecimal(saleData.get("saleDiscountAmount"));
+        if (saleDiscountPercentage.compareTo(BigDecimal.ZERO) > 0) {
+            addTotalRow(totalsTable, "Sale discount (%)", saleDiscountPercentage.setScale(2, RoundingMode.HALF_UP).toPlainString() + "%", false);
+        }
+        if (saleDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
+            addTotalRow(totalsTable, "Sale discount amount", saleDiscountAmount.setScale(2, RoundingMode.HALF_UP).toPlainString() + "/-", false);
+        }
+        // GST
+        addTotalRow(totalsTable, "GST", totalTax.setScale(2, RoundingMode.HALF_UP).toPlainString() + "/-", false);
+        // GRAND TOTAL (rounded per existing logic)
         BigDecimal grandTotal = subtotal.add(totalTax).setScale(0, RoundingMode.HALF_UP);
         addTotalRow(totalsTable, "GRAND TOTAL", grandTotal.toPlainString() + "/-", true);
 
