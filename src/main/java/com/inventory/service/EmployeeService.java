@@ -48,8 +48,10 @@ public class EmployeeService {
             employee = employeeRepository.save(employee);
             return ApiResponse.success("Employee created successfully");
         } catch (ValidationException e) {
+            e.printStackTrace();
             throw e;
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ValidationException("Failed to create employee: " + e.getMessage());
         }
     }
@@ -174,9 +176,9 @@ public class EmployeeService {
             }
         }
 
-        if (dto.getStartTime() == null || dto.getStartTime().isAfter(LocalTime.of(23, 59, 59))) {
-            throw new ValidationException("Start time must be before 11:59 PM");
-        }
+//        if (dto.getStartTime() == null || dto.getStartTime().isAfter(LocalTime.of(23, 59, 59))) {
+//            throw new ValidationException("Start time must be before 11:59 PM");
+//        }
 
         // Ensure days provided for FIXED type (can be empty, but not null)
         if ("FIXED".equalsIgnoreCase(dto.getWageType()) && dto.getDays() == null) {
