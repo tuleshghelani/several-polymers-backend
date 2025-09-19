@@ -1,0 +1,73 @@
+{
+  "info": {
+    "name": "Employee Withdraw Controller",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "00000000-0000-0000-0000-employeewithdraw0001"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseURL", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create Employee Withdraw",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseURL}}/api/employee-withdraws", "host": ["{{baseURL}}"], "path": ["api","employee-withdraws"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeId\": 1,\n  \"payment\": 500.00,\n  \"withdrawDate\": \"01-09-2025\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Update Employee Withdraw (body id)",
+      "request": {
+        "method": "PUT",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseURL}}/api/employee-withdraws", "host": ["{{baseURL}}"], "path": ["api","employee-withdraws"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": 1,\n  \"employeeId\": 1,\n  \"payment\": 600.00,\n  \"withdrawDate\": \"02-09-2025\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Delete Employee Withdraw (body id)",
+      "request": {
+        "method": "DELETE",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseURL}}/api/employee-withdraws", "host": ["{{baseURL}}"], "path": ["api","employee-withdraws"] },
+        "body": { "mode": "raw", "raw": "{\n  \"id\": 1\n}" }
+      }
+    },
+    {
+      "name": "Search Employee Withdraws",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseURL}}/api/employee-withdraws/search", "host": ["{{baseURL}}"], "path": ["api","employee-withdraws","search"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeId\": 1,\n  \"search\": \"john\",\n  \"currentPage\": 0,\n  \"perPageRecord\": 10\n}"
+        }
+      }
+    },
+    {
+      "name": "Detail Employee Withdraw (body id)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseURL}}/api/employee-withdraws/detail", "host": ["{{baseURL}}"], "path": ["api","employee-withdraws","detail"] },
+        "body": { "mode": "raw", "raw": "{\n  \"id\": 1\n}" }
+      }
+    }
+  ]
+}

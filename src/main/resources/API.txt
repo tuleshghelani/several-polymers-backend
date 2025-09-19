@@ -295,3 +295,122 @@ Error handling
 JWT authentication
 Proper DTO mappings
 Complex business logic for sales and profit calculations
+
+Employee Withdraw APIs
+1. Create Employee Withdraw
+
+POST /api/employee-withdraws
+Content-Type: application/json
+Authorization: Bearer {token}
+
+Request:
+{
+    "employeeId": 1,
+    "payment": 500.00,
+    "withdrawDate": "01-09-2025"
+}
+
+Response:
+{
+    "success": true,
+    "message": "Employee withdraw created successfully"
+}
+
+2. Update Employee Withdraw (body id)
+
+PUT /api/employee-withdraws
+Content-Type: application/json
+Authorization: Bearer {token}
+
+Request:
+{
+    "id": 1,
+    "employeeId": 1,
+    "payment": 600.00,
+    "withdrawDate": "02-09-2025"
+}
+
+Response:
+{
+    "success": true,
+    "message": "Employee withdraw updated successfully"
+}
+
+3. Delete Employee Withdraw (body id)
+
+DELETE /api/employee-withdraws
+Content-Type: application/json
+Authorization: Bearer {token}
+
+Request:
+{
+    "id": 1
+}
+
+Response:
+{
+    "success": true,
+    "message": "Employee withdraw deleted successfully"
+}
+
+4. Search Employee Withdraws (paged)
+
+POST /api/employee-withdraws/search
+Content-Type: application/json
+Authorization: Bearer {token}
+
+Request:
+{
+    "employeeId": 1,
+    "search": "john",
+    "currentPage": 0,
+    "perPageRecord": 10
+}
+
+Response:
+{
+    "success": true,
+    "message": "Withdraws fetched successfully",
+    "data": {
+        "content": [
+            {
+                "id": 1,
+                "employeeName": "John Doe",
+                "employeeId": 1,
+                "withdrawDate": "2025-09-01",
+                "payment": 600.00,
+                "createdAt": "2025-09-01T10:00:00Z"
+            }
+        ],
+        "pageable": {
+            "pageNumber": 0,
+            "pageSize": 10
+        },
+        "totalElements": 1,
+        "totalPages": 1
+    }
+}
+
+5. Detail Employee Withdraw (body id)
+
+POST /api/employee-withdraws/detail
+Content-Type: application/json
+Authorization: Bearer {token}
+
+Request:
+{
+    "id": 1
+}
+
+Response:
+{
+    "success": true,
+    "message": "Withdraw detail fetched",
+    "data": {
+        "id": 1,
+        "employeeId": 1,
+        "employeeName": "John Doe",
+        "payment": 600.00,
+        "withdrawDate": "2025-09-02"
+    }
+}
