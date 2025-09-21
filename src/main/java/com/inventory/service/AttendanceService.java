@@ -9,6 +9,7 @@ import com.inventory.dto.request.AttendanceDeleteRequestDto;
 import com.inventory.dto.request.AttendancePdfRequestDto;
 import com.inventory.dto.request.AttendanceRequestDto;
 import com.inventory.dto.request.AttendanceSearchRequestDto;
+import com.inventory.dto.request.PayrollSummaryRequestDto;
 import com.inventory.entity.Attendance;
 import com.inventory.entity.Employee;
 import com.inventory.entity.UserMaster;
@@ -40,7 +41,7 @@ public class AttendanceService {
     private final EmployeeRepository employeeRepository;
     private final UtilityService utilityService;
     private final AttendanceDao attendanceDao;
-    private final AttendancePdfService attendancePdfService;
+    private final AttendanceSummaryPdfService attendanceSummaryPdfService;
     private final EmployeeDao employeeDao;
     private final EmployeeWithdrawDao employeeWithdrawDao;
 
@@ -243,7 +244,7 @@ public class AttendanceService {
                 endDate
             );
             
-            return attendancePdfService.generatePdf(employeeData, attendanceRecords, withdrawRecords, startDate, endDate);
+            return attendanceSummaryPdfService.generatePdf(employeeData, attendanceRecords, withdrawRecords, startDate, endDate);
         } catch (Exception e) {
             throw new ValidationException("Failed to generate attendance PDF: " + e.getMessage());
         }
@@ -263,6 +264,44 @@ public class AttendanceService {
         } catch (Exception e) {
             logger.error("Error fetching withdraw data for employee {}: {}", employeeId, e.getMessage());
             return List.of(); // Return empty list if error occurs
+        }
+    }
+    
+    public byte[] generatePayrollSummaryPdf(PayrollSummaryRequestDto request) {
+        try {
+            // Validate request
+            if (request.getStartDate() == null || request.getEndDate() == null) {
+                throw new ValidationException("Start date and end date are required");
+            }
+            
+            if (request.getEndDate().isBefore(request.getStartDate())) {
+                throw new ValidationException("End date cannot be before start date");
+            }
+            
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            
+            // Get attendance summaries for all employees
+            List<Map<String, Object>> attendanceSummaries = attendanceDao.getAllEmployeesAttendanceSummary(
+                currentUser.getClient().getId(), 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+            
+            // Get withdraw summaries for all employees
+            List<Map<String, Object>> withdrawSummaries = employeeWithdrawDao.getAllEmployeesWithdrawSummary(
+                currentUser.getClient().getId(), 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+            
+            return attendanceSummaryPdfService.generatePayrollSummaryPdf(
+                attendanceSummaries, 
+                withdrawSummaries, 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+        } catch (Exception e) {
+            throw new ValidationException("Failed to generate payroll summary PDF: " + e.getMessage());
         }
     }
 } 

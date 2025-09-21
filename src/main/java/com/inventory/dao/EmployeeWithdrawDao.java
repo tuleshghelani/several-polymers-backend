@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Repository
@@ -79,6 +80,38 @@ public class EmployeeWithdrawDao {
         }
 
         return new PageImpl<>(content, pageable, total);
+    }
+    
+    public List<Map<String, Object>> getAllEmployeesWithdrawSummary(Long clientId, LocalDate startDate, LocalDate endDate) {
+        String sql = """
+            SELECT 
+                e.id as employee_id,
+                e.name as employee_name,
+                COALESCE(SUM(ew.payment), 0) as total_withdraw
+            FROM (select * from employee e where e.client_id = :clientId and e.status = 'A') e
+            LEFT JOIN employee_withdraw ew ON e.id = ew.employee_id 
+                AND ew.withdraw_date BETWEEN :startDate AND :endDate
+            GROUP BY e.id, e.name
+            ORDER BY e.name ASC
+        """;
+        
+        Query query = entityManager.createNativeQuery(sql)
+            .setParameter("clientId", clientId)
+            .setParameter("startDate", startDate)
+            .setParameter("endDate", endDate);
+        
+        List<Object[]> results = query.getResultList();
+        List<Map<String, Object>> summaries = new ArrayList<>();
+        
+        for (Object[] row : results) {
+            Map<String, Object> summary = new HashMap<>();
+            summary.put("employeeId", row[0]);
+            summary.put("employeeName", row[1]);
+            summary.put("totalWithdraw", row[2]);
+            summaries.add(summary);
+        }
+        
+        return summaries;
     }
 }
 
