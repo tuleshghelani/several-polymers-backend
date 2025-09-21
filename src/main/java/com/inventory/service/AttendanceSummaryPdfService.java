@@ -1,7 +1,6 @@
 package com.inventory.service;
 
 import com.inventory.dao.EmployeeWithdrawDao;
-import com.inventory.dto.EmployeeWithdrawDto;
 import com.inventory.exception.ValidationException;
 import com.inventory.model.PdfGenerationStatus;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -24,18 +23,19 @@ import jakarta.annotation.PostConstruct;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -497,6 +497,173 @@ public class AttendancePdfService {
     private String formatNumber(BigDecimal number) {
         String formatted = number.stripTrailingZeros().toPlainString();
         return formatted;
+    }
+    
+    public byte[] generatePayrollSummaryPdf(List<Map<String, Object>> attendanceSummaries, 
+                                          List<Map<String, Object>> withdrawSummaries,
+                                          LocalDate startDate, LocalDate endDate) {
+        String requestId = "payroll_summary_" + System.currentTimeMillis();
+
+        PdfGenerationStatus status = processingRequests.get(requestId);
+        if (status != null && !status.isStale()) {
+            throw new ValidationException("PDF generation already in progress for this request");
+        }
+
+        processingRequests.put(requestId, new PdfGenerationStatus());
+        
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             PdfDocument pdf = new PdfDocument(new PdfWriter(baos))) {
+            
+            Document document = new Document(pdf, PageSize.A4);
+            document.setMargins(20, 20, 20, 20);
+            
+            addPayrollSummaryHeader(document, startDate, endDate);
+            addPayrollSummaryTable(document, attendanceSummaries, withdrawSummaries);
+            
+            document.close();
+            return baos.toByteArray();
+            
+        } catch (Exception e) {
+            log.error("Error generating payroll summary PDF", e);
+            throw new ValidationException("Failed to generate payroll summary PDF: " + e.getMessage());
+        } finally {
+            processingRequests.remove(requestId);
+        }
+    }
+    
+    private void addPayrollSummaryHeader(Document document, LocalDate startDate, LocalDate endDate) {
+        Table header = new Table(2).useAllAvailableWidth();
+        
+        Cell titleCell = new Cell()
+            .add(new Paragraph("Payroll Summary")
+                .setFontSize(18)
+                .setFontColor(PRIMARY_COLOR)
+                .setBold())
+            .add(new Paragraph("Employee Salary & Withdraw Summary")
+                .setFontSize(10)
+                .setFontColor(TEXT_SECONDARY))
+            .setBorder(Border.NO_BORDER);
+        
+        Cell dateCell = new Cell()
+            .add(new Paragraph("Period: " + DATE_FORMATTER.format(startDate) + 
+                 " to " + DATE_FORMATTER.format(endDate))
+                .setFontColor(SECONDARY_COLOR)
+                .setFontSize(9))
+            .add(new Paragraph("Year: " + startDate.getYear())
+                .setFontColor(TEXT_SECONDARY)
+                .setFontSize(8))
+            .setBorder(Border.NO_BORDER)
+            .setTextAlignment(TextAlignment.RIGHT);
+        
+        header.addCell(titleCell);
+        header.addCell(dateCell);
+        
+        // Add decorative line
+        Table line = new Table(1).useAllAvailableWidth().setMarginTop(8);
+        line.addCell(new Cell()
+            .setHeight(1.5f)
+            .setBackgroundColor(ACCENT1)
+            .setBorder(Border.NO_BORDER));
+        
+        document.add(header);
+        document.add(line);
+    }
+    
+    private void addPayrollSummaryTable(Document document, List<Map<String, Object>> attendanceSummaries, 
+                                      List<Map<String, Object>> withdrawSummaries) {
+        // Create a map of withdraw summaries for quick lookup
+        Map<Long, BigDecimal> withdrawMap = withdrawSummaries.stream()
+            .collect(Collectors.toMap(
+                summary -> (Long) summary.get("employeeId"),
+                summary -> (BigDecimal) summary.get("totalWithdraw")
+            ));
+        
+        Table table = new Table(new float[]{0.4f, 1.8f, 1.2f, 1.2f, 1.2f, 1.2f, 1f})
+            .useAllAvailableWidth()
+            .setMarginTop(15);
+
+        addPayrollSummaryTableHeader(table);
+        
+        int rowNum = 1;
+        for (Map<String, Object> attendanceSummary : attendanceSummaries) {
+            addPayrollSummaryTableRow(table, rowNum++, attendanceSummary, withdrawMap);
+        }
+        
+        document.add(table);
+    }
+    
+    private void addPayrollSummaryTableHeader(Table table) {
+        String[] headers = {
+            "No", "Name", "Hours(Day)", "Total Regular Pay", "Total Pay", "Upad", "Total", "Sign"
+        };
+        
+        for (String header : headers) {
+            Cell cell = new Cell()
+                .add(new Paragraph(header)
+                    .setFontSize(8))
+                .setFontColor(ColorConstants.WHITE)
+                .setBackgroundColor(PRIMARY_COLOR)
+                .setBold()
+                .setPadding(4)
+                .setTextAlignment(TextAlignment.CENTER);
+            table.addHeaderCell(cell);
+        }
+        
+        table.setBackgroundColor(BACKGROUND, 0.3f);
+    }
+    
+    private void addPayrollSummaryTableRow(Table table, int rowNum, Map<String, Object> attendanceSummary, 
+                                         Map<Long, BigDecimal> withdrawMap) {
+        Long employeeId = (Long) attendanceSummary.get("employeeId");
+        String employeeName = (String) attendanceSummary.get("employeeName");
+        BigDecimal totalRegularHours = (BigDecimal) attendanceSummary.get("totalRegularHours");
+        BigDecimal totalOvertimeHours = (BigDecimal) attendanceSummary.get("totalOvertimeHours");
+        BigDecimal totalRegularPay = (BigDecimal) attendanceSummary.get("totalRegularPay");
+        BigDecimal totalPay = (BigDecimal) attendanceSummary.get("totalPay");
+        BigDecimal totalWithdraw = withdrawMap.getOrDefault(employeeId, BigDecimal.ZERO);
+        
+        // Calculate total hours and days
+        BigDecimal totalHours = totalRegularHours.add(totalOvertimeHours);
+        BigDecimal totalDays = totalHours.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP);
+        
+        // Calculate final total (total pay - withdraw)
+        BigDecimal finalTotal = totalPay.subtract(totalWithdraw);
+        
+        // Row number
+        table.addCell(createPayrollCell(String.valueOf(rowNum), 7));
+        
+        // Employee name
+        table.addCell(createPayrollCell(employeeName, 8));
+        
+        // Hours (Day) - show hours with days in brackets
+        String hoursDayText = formatNumber(totalHours) + " (" + formatNumber(totalDays) + ")";
+        table.addCell(createPayrollCell(hoursDayText, 7));
+        
+        // Total Regular Pay
+        table.addCell(createPayrollCell(formatCurrency(totalRegularPay), 7));
+        
+        // Total Pay
+        table.addCell(createPayrollCell(formatCurrency(totalPay), 7));
+        
+        // Upad (Withdraw)
+        table.addCell(createPayrollCell(formatCurrency(totalWithdraw), 7));
+        
+        // Total (Final)
+        table.addCell(createPayrollCell(formatCurrency(finalTotal), 7));
+        
+        // Sign (empty)
+        table.addCell(createPayrollCell("", 7));
+    }
+    
+    private Cell createPayrollCell(String content, int fontSize) {
+        return new Cell()
+            .add(new Paragraph(content)
+                .setFontSize(fontSize))
+            .setFontColor(TEXT_PRIMARY)
+            .setPadding(3)
+            .setTextAlignment(TextAlignment.CENTER)
+            .setMinHeight(18f)
+            .setVerticalAlignment(VerticalAlignment.MIDDLE);
     }
     
 } 
