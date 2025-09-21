@@ -35,6 +35,9 @@ public class EmployeeWithdraw {
     @Column(name = "payment", precision = 10, scale = 2, nullable = false)
     private BigDecimal payment;
 
+    @Column(name = "remarks", columnDefinition = "TEXT")
+    private String remarks;
+
     @Column(name = "created_at", nullable = false, length = 29, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();
 

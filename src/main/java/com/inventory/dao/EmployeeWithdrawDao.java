@@ -23,7 +23,7 @@ public class EmployeeWithdrawDao {
         StringBuilder fromWhere = new StringBuilder();
         Map<String, Object> params = new HashMap<>();
 
-        select.append("SELECT ew.id, e.name AS employee_name, ew.employee_id, ew.withdraw_date, ew.payment, ew.created_at ");
+        select.append("SELECT ew.id, e.name AS employee_name, ew.employee_id, ew.withdraw_date, ew.payment, ew.remarks, ew.created_at ");
         fromWhere.append("FROM (select * from employee_withdraw ew where ew.client_id = :clientId) ew ");
         fromWhere.append("LEFT JOIN (select id, name from employee where client_id = :clientId) e ON e.id = ew.employee_id ");
         fromWhere.append("WHERE 1=1 ");
@@ -41,8 +41,8 @@ public class EmployeeWithdrawDao {
             fromWhere.append("AND ew.withdraw_date <= :endDate ");
             params.put("endDate", dto.getEndDate().toLocalDate());
         }
-        if (StringUtils.hasText(dto.getSearch())) {
-            fromWhere.append("AND LOWER(e.name) LIKE LOWER(:search) ");
+        if (dto.getSearch() != null && StringUtils.hasText(dto.getSearch())) {
+            fromWhere.append("AND (LOWER(e.name) LIKE LOWER(:search) OR LOWER(ew.remarks) LIKE LOWER(:search)) ");
             params.put("search", "%" + dto.getSearch().trim() + "%");
         }
 
@@ -73,7 +73,8 @@ public class EmployeeWithdrawDao {
             m.put("employeeId", r[2]);
             m.put("withdrawDate", r[3]);
             m.put("payment", r[4]);
-            m.put("createdAt", r[5]);
+            m.put("remarks", r[5]);
+            m.put("createdAt", r[6]);
             content.add(m);
         }
 

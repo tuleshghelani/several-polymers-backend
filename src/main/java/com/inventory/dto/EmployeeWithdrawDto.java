@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.inventory.config.CustomDateDeserializer;
+import com.inventory.config.CustomLocalDateDeserializer;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,9 +23,11 @@ public class EmployeeWithdrawDto {
     private String employeeName;
     private BigDecimal payment;
 
-    @JsonDeserialize(using = CustomDateDeserializer.class)
-    @JsonFormat(pattern = "dd-MM-yyyy", timezone = "IST")
+    @JsonDeserialize(using = CustomLocalDateDeserializer.class)
+    @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate withdrawDate;
+
+    private String remarks;
 
     // Filters
     @JsonDeserialize(using = CustomDateDeserializer.class)

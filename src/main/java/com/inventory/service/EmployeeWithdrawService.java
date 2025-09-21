@@ -41,6 +41,7 @@ public class EmployeeWithdrawService {
             entity.setEmployee(employee);
             entity.setPayment(dto.getPayment());
             entity.setWithdrawDate(dto.getWithdrawDate() != null ? dto.getWithdrawDate() : LocalDate.now());
+            entity.setRemarks(dto.getRemarks());
             entity.setCreatedBy(currentUser);
             entity.setClient(currentUser.getClient());
 
@@ -84,6 +85,9 @@ public class EmployeeWithdrawService {
             if (dto.getWithdrawDate() != null) {
                 entity.setWithdrawDate(dto.getWithdrawDate());
             }
+            if (dto.getRemarks() != null) {
+                entity.setRemarks(dto.getRemarks());
+            }
 
             employeeWithdrawRepository.save(entity);
             return ApiResponse.success("Employee withdraw updated successfully");
@@ -126,6 +130,7 @@ public class EmployeeWithdrawService {
             dto.setEmployeeName(entity.getEmployee().getName());
             dto.setPayment(entity.getPayment());
             dto.setWithdrawDate(entity.getWithdrawDate());
+            dto.setRemarks(entity.getRemarks());
             return ApiResponse.success("Withdraw detail fetched", dto);
         } catch (Exception e) {
             throw new ValidationException("Failed to fetch detail: " + e.getMessage());
@@ -139,6 +144,7 @@ public class EmployeeWithdrawService {
             Page<Map<String, Object>> page = employeeWithdrawDao.search(dto);
             return ApiResponse.success("Withdraws fetched successfully", page);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ValidationException("Failed to search withdraws: " + e.getMessage());
         }
     }
