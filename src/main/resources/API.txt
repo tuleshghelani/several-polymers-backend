@@ -414,3 +414,25 @@ Response:
         "withdrawDate": "2025-09-02"
     }
 }
+
+==> Production
+POST /api/bachs/upsert
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "id":1,
+  "date": "2025-09-22",
+  "shift": "A",
+  "resignBagUse": 1.000,
+  "resignBagOpeningStock": 2.000,
+  "cpwBagUse": 3.000,
+  "cpwBagOpeningStock": 4.000,
+  "machineId": 1,
+  "mixer": [
+    { "id":1, "productId": 10, "quantity": 5.000 }
+  ],
+  "production": [
+    { "id":1,"productId": 10, "quantity": 5.000, "numberOfRoll": 2 }
+  ]
+}
