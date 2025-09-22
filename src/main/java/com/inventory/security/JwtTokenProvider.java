@@ -50,8 +50,10 @@ public class JwtTokenProvider {
                 .parseClaimsJws(authToken);
             return true;
         } catch (ExpiredJwtException ex) {
+            ex.printStackTrace();
             throw new ValidationException("Invalid JWT token", HttpStatus.UNAUTHORIZED);
         } catch (JwtException ex) {
+            ex.printStackTrace();
             throw new ValidationException("Invalid JWT token", HttpStatus.UNAUTHORIZED);
         }
     }

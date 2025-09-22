@@ -23,7 +23,7 @@
         "url": { "raw": "{{baseURL}}/api/employee-withdraws", "host": ["{{baseURL}}"], "path": ["api","employee-withdraws"] },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"employeeId\": 1,\n  \"payment\": 500.00,\n  \"withdrawDate\": \"01-09-2025\"\n}"
+          "raw": "{\n  \"employeeId\": 1,\n  \"payment\": 500.00,\n  \"withdrawDate\": \"01-09-2025\",\n  \"remarks\": \"Monthly salary advance for emergency expenses\"\n}"
         }
       }
     },
@@ -35,7 +35,7 @@
         "url": { "raw": "{{baseURL}}/api/employee-withdraws", "host": ["{{baseURL}}"], "path": ["api","employee-withdraws"] },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"id\": 1,\n  \"employeeId\": 1,\n  \"payment\": 600.00,\n  \"withdrawDate\": \"02-09-2025\"\n}"
+          "raw": "{\n  \"id\": 1,\n  \"employeeId\": 1,\n  \"payment\": 600.00,\n  \"withdrawDate\": \"02-09-2025\",\n  \"remarks\": \"Updated: Additional advance for medical expenses\"\n}"
         }
       }
     },

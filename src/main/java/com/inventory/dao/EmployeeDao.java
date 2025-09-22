@@ -113,7 +113,8 @@ public class EmployeeDao {
                 e.start_time,
                 e.regular_pay,
                 e.overtime_pay,
-                e.roles
+                e.roles,
+                e.client_id
             FROM employee e
             WHERE e.id = :employeeId
         """;
@@ -144,6 +145,7 @@ public class EmployeeDao {
         employee.put("regularPay", result[index++]);
         employee.put("overtimePay", result[index++]);
         employee.put("days", result[index++]);
+        employee.put("clientId", result[index++]);
         return employee;
     }
 

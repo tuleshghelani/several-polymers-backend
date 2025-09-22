@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AttendancePdfService {
+public class AttendanceSummaryPdfService {
     private static final DeviceRgb PRIMARY_COLOR = new DeviceRgb(20, 88, 129);    // #145881
     private static final DeviceRgb SECONDARY_COLOR = new DeviceRgb(23, 163, 223); // #17a3df
     private static final DeviceRgb BACKGROUND = new DeviceRgb(245, 249, 252);     // #f5f9fc
@@ -578,7 +578,7 @@ public class AttendancePdfService {
                 summary -> (BigDecimal) summary.get("totalWithdraw")
             ));
         
-        Table table = new Table(new float[]{0.4f, 1.8f, 1.2f, 1.2f, 1.2f, 1.2f, 1f})
+        Table table = new Table(new float[]{0.4f, 1.8f, 1.2f, 1.2f, 1.2f, 1.2f, 1f, 1.2f})
             .useAllAvailableWidth()
             .setMarginTop(15);
 
@@ -594,7 +594,7 @@ public class AttendancePdfService {
     
     private void addPayrollSummaryTableHeader(Table table) {
         String[] headers = {
-            "No", "Name", "Hours(Day)", "Regular Pay", "Total Pay", "Upad", "Total", "Sign"
+            "No", "Name", "Hours(Day)", "Total Regular Pay", "Total Pay", "Upad", "Total", "Sign"
         };
         
         for (String header : headers) {
@@ -618,6 +618,7 @@ public class AttendancePdfService {
         String employeeName = (String) attendanceSummary.get("employeeName");
         BigDecimal totalRegularHours = (BigDecimal) attendanceSummary.get("totalRegularHours");
         BigDecimal totalOvertimeHours = (BigDecimal) attendanceSummary.get("totalOvertimeHours");
+        BigDecimal totalRegularPay = (BigDecimal) attendanceSummary.get("totalRegularPay");
         BigDecimal totalPay = (BigDecimal) attendanceSummary.get("totalPay");
         BigDecimal totalWithdraw = withdrawMap.getOrDefault(employeeId, BigDecimal.ZERO);
         
@@ -638,9 +639,8 @@ public class AttendancePdfService {
         String hoursDayText = formatNumber(totalHours) + " (" + formatNumber(totalDays) + ")";
         table.addCell(createPayrollCell(hoursDayText, 7));
         
-        // Regular Pay (employee's configured regular pay rate)
-        BigDecimal regularPay = (BigDecimal) attendanceSummary.get("regularPay");
-        table.addCell(createPayrollCell(formatCurrency(regularPay), 7));
+        // Total Regular Pay
+        table.addCell(createPayrollCell(formatCurrency(totalRegularPay), 7));
         
         // Total Pay
         table.addCell(createPayrollCell(formatCurrency(totalPay), 7));

@@ -4,6 +4,7 @@ import com.inventory.dto.request.AttendanceDeleteRequestDto;
 import com.inventory.dto.request.AttendancePdfRequestDto;
 import com.inventory.dto.request.AttendanceRequestDto;
 import com.inventory.dto.request.AttendanceSearchRequestDto;
+import com.inventory.dto.request.PayrollSummaryRequestDto;
 import com.inventory.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
@@ -39,6 +40,19 @@ public class AttendanceController {
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(ContentDisposition.builder("attachment")
             .filename("attendance_.pdf")
+            .build());
+        
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+    
+    @PostMapping("/payroll-summary-pdf")
+    public ResponseEntity<byte[]> generatePayrollSummaryPdf(@RequestBody PayrollSummaryRequestDto request) {
+        byte[] pdfBytes = attendanceService.generatePayrollSummaryPdf(request);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+            .filename("payroll_summary.pdf")
             .build());
         
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);

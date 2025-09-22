@@ -2,11 +2,14 @@ package com.inventory.service;
 
 import com.inventory.dao.AttendanceDao;
 import com.inventory.dao.EmployeeDao;
+import com.inventory.dao.EmployeeWithdrawDao;
 import com.inventory.dto.ApiResponse;
+import com.inventory.dto.EmployeeWithdrawDto;
 import com.inventory.dto.request.AttendanceDeleteRequestDto;
 import com.inventory.dto.request.AttendancePdfRequestDto;
 import com.inventory.dto.request.AttendanceRequestDto;
 import com.inventory.dto.request.AttendanceSearchRequestDto;
+import com.inventory.dto.request.PayrollSummaryRequestDto;
 import com.inventory.entity.Attendance;
 import com.inventory.entity.Employee;
 import com.inventory.entity.UserMaster;
@@ -24,6 +27,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,8 +41,9 @@ public class AttendanceService {
     private final EmployeeRepository employeeRepository;
     private final UtilityService utilityService;
     private final AttendanceDao attendanceDao;
-    private final AttendancePdfService attendancePdfService;
+    private final AttendanceSummaryPdfService attendanceSummaryPdfService;
     private final EmployeeDao employeeDao;
+    private final EmployeeWithdrawDao employeeWithdrawDao;
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> saveAttendance(AttendanceRequestDto request) {
@@ -231,9 +236,72 @@ public class AttendanceService {
                 endDate
             );
             
-            return attendancePdfService.generatePdf(employeeData, attendanceRecords, startDate, endDate);
+            // Get withdraw records for the same period
+            List<Map<String, Object>> withdrawRecords = getEmployeeWithdrawData(
+                request.getEmployeeId(), 
+                employeeData.get("clientId"), 
+                startDate, 
+                endDate
+            );
+            
+            return attendanceSummaryPdfService.generatePdf(employeeData, attendanceRecords, withdrawRecords, startDate, endDate);
         } catch (Exception e) {
             throw new ValidationException("Failed to generate attendance PDF: " + e.getMessage());
+        }
+    }
+    
+    private List<Map<String, Object>> getEmployeeWithdrawData(Long employeeId, Object clientId, LocalDate startDate, LocalDate endDate) {
+        try {
+            EmployeeWithdrawDto dto = new EmployeeWithdrawDto();
+            dto.setEmployeeId(employeeId);
+            dto.setClientId((Long) clientId);
+            dto.setStartDate(startDate.atStartOfDay().atZone(ZoneId.of("Asia/Kolkata")).toOffsetDateTime());
+            dto.setEndDate(endDate.atTime(23, 59, 59).atZone(ZoneId.of("Asia/Kolkata")).toOffsetDateTime());
+            dto.setCurrentPage(0);
+            dto.setPerPageRecord(1000); // Get all records for the period
+            
+            return employeeWithdrawDao.search(dto).getContent();
+        } catch (Exception e) {
+            logger.error("Error fetching withdraw data for employee {}: {}", employeeId, e.getMessage());
+            return List.of(); // Return empty list if error occurs
+        }
+    }
+    
+    public byte[] generatePayrollSummaryPdf(PayrollSummaryRequestDto request) {
+        try {
+            // Validate request
+            if (request.getStartDate() == null || request.getEndDate() == null) {
+                throw new ValidationException("Start date and end date are required");
+            }
+            
+            if (request.getEndDate().isBefore(request.getStartDate())) {
+                throw new ValidationException("End date cannot be before start date");
+            }
+            
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            
+            // Get attendance summaries for all employees
+            List<Map<String, Object>> attendanceSummaries = attendanceDao.getAllEmployeesAttendanceSummary(
+                currentUser.getClient().getId(), 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+            
+            // Get withdraw summaries for all employees
+            List<Map<String, Object>> withdrawSummaries = employeeWithdrawDao.getAllEmployeesWithdrawSummary(
+                currentUser.getClient().getId(), 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+            
+            return attendanceSummaryPdfService.generatePayrollSummaryPdf(
+                attendanceSummaries, 
+                withdrawSummaries, 
+                request.getStartDate(), 
+                request.getEndDate()
+            );
+        } catch (Exception e) {
+            throw new ValidationException("Failed to generate payroll summary PDF: " + e.getMessage());
         }
     }
 } 

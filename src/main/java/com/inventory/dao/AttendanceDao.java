@@ -137,4 +137,56 @@ public class AttendanceDao {
         
         return attendances;
     }
+    
+    public List<Map<String, Object>> getAllEmployeesAttendanceSummary(Long clientId, LocalDate startDate, LocalDate endDate) {
+        String sql = """
+            SELECT 
+                e.id as employee_id,
+                e.name as employee_name,
+                e.regular_pay,
+                e.wage_type,
+                COALESCE(SUM(a.regular_hours), 0) as total_regular_hours,
+                COALESCE(SUM(a.overtime_hours), 0) as total_overtime_hours,
+                COALESCE(SUM(a.regular_pay), 0) as total_regular_pay,
+                COALESCE(SUM(a.overtime_pay), 0) as total_overtime_pay,
+                COALESCE(SUM(a.total_pay), 0) as total_pay
+            FROM employee e
+            LEFT JOIN attendance a ON e.id = a.employee_id 
+                AND DATE(a.start_date_time) BETWEEN :startDate AND :endDate
+            WHERE e.status = 'A' AND e.client_id = :clientId
+            GROUP BY e.id, e.name, e.regular_pay, e.wage_type
+            ORDER BY e.name ASC
+        """;
+        
+        Query query = entityManager.createNativeQuery(sql)
+            .setParameter("clientId", clientId)
+            .setParameter("startDate", startDate)
+            .setParameter("endDate", endDate);
+        
+        List<Object[]> results = query.getResultList();
+        return transformAttendanceSummaryResults(results);
+    }
+    
+    private List<Map<String, Object>> transformAttendanceSummaryResults(List<Object[]> results) {
+        List<Map<String, Object>> summaries = new ArrayList<>();
+        
+        for (Object[] row : results) {
+            Map<String, Object> summary = new HashMap<>();
+            int index = 0;
+            
+            summary.put("employeeId", row[index++]);
+            summary.put("employeeName", row[index++]);
+            summary.put("regularPay", row[index++]);
+            summary.put("wageType", row[index++]);
+            summary.put("totalRegularHours", row[index++]);
+            summary.put("totalOvertimeHours", row[index++]);
+            summary.put("totalRegularPay", row[index++]);
+            summary.put("totalOvertimePay", row[index++]);
+            summary.put("totalPay", row[index++]);
+            
+            summaries.add(summary);
+        }
+        
+        return summaries;
+    }
 } 

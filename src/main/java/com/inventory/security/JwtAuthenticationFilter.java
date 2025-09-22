@@ -57,8 +57,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         } catch (ValidationException ex) {
+            ex.printStackTrace();
             handleAuthenticationError(response, ex.getMessage(), HttpStatus.UNAUTHORIZED);
         } catch (Exception ex) {
+            ex.printStackTrace();
             handleAuthenticationError(response, "Invalid authentication token", HttpStatus.UNAUTHORIZED);
         }
     }
