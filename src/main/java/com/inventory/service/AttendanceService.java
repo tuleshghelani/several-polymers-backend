@@ -96,7 +96,7 @@ public class AttendanceService {
             : BigDecimal.ZERO;
         
         // Calculate pays
-        BigDecimal regularPay = calculateRegularPay(employee, regularHours);
+        BigDecimal regularPay = calculateRegularPay(employee, hoursWorked);
         BigDecimal overtimePay = calculateOvertimePay(employee, overtimeHours);
         BigDecimal totalPay = regularPay.add(overtimePay);
         
@@ -104,7 +104,7 @@ public class AttendanceService {
             .employee(employee)
             .startDateTime(request.getStartDateTime())
             .endDateTime(request.getEndDateTime())
-            .regularHours(regularHours)
+            .regularHours(hoursWorked)
             .overtimeHours(overtimeHours)
             .regularPay(regularPay)
             .overtimePay(overtimePay)
