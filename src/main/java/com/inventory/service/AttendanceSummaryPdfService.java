@@ -578,7 +578,7 @@ public class AttendanceSummaryPdfService {
                 summary -> (BigDecimal) summary.get("totalWithdraw")
             ));
         
-        Table table = new Table(new float[]{0.4f, 1.8f, 1.2f, 1.2f, 1.2f, 1.2f, 1f, 1.2f})
+        Table table = new Table(new float[]{0.4f, 1.8f, 1.2f, 1.2f, 1.2f, 1.2f, 1f, 1.8f})
             .useAllAvailableWidth()
             .setMarginTop(15);
 
@@ -594,7 +594,7 @@ public class AttendanceSummaryPdfService {
     
     private void addPayrollSummaryTableHeader(Table table) {
         String[] headers = {
-            "No", "Name", "Hours(Day)", "Total Regular Pay", "Total Pay", "Upad", "Total", "Sign"
+            "No", "Name", "Hours(Day)", "Regular Pay", "Total Pay", "Upad", "Total", "Sign"
         };
         
         for (String header : headers) {
@@ -616,14 +616,15 @@ public class AttendanceSummaryPdfService {
                                          Map<Long, BigDecimal> withdrawMap) {
         Long employeeId = (Long) attendanceSummary.get("employeeId");
         String employeeName = (String) attendanceSummary.get("employeeName");
-        BigDecimal totalRegularHours = (BigDecimal) attendanceSummary.get("totalRegularHours");
+        BigDecimal regularPay = (BigDecimal) attendanceSummary.get("regularPay");
         BigDecimal totalOvertimeHours = (BigDecimal) attendanceSummary.get("totalOvertimeHours");
         BigDecimal totalRegularPay = (BigDecimal) attendanceSummary.get("totalRegularPay");
         BigDecimal totalPay = (BigDecimal) attendanceSummary.get("totalPay");
+        BigDecimal regularHours = (BigDecimal) attendanceSummary.get("regularHours");
         BigDecimal totalWithdraw = withdrawMap.getOrDefault(employeeId, BigDecimal.ZERO);
         
         // Calculate total hours and days
-        BigDecimal totalHours = totalRegularHours.add(totalOvertimeHours);
+        BigDecimal totalHours = regularPay.add(totalOvertimeHours);
         BigDecimal totalDays = totalHours.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP);
         
         // Calculate final total (total pay - withdraw)
@@ -640,7 +641,8 @@ public class AttendanceSummaryPdfService {
         table.addCell(createPayrollCell(hoursDayText, 7));
         
         // Total Regular Pay
-        table.addCell(createPayrollCell(formatCurrency(totalRegularPay), 7));
+        String regularPayText = formatNumber(regularPay) + " (" + formatNumber(regularPay.multiply(regularHours)) + ")";
+        table.addCell(createPayrollCell(regularPayText, 7));
         
         // Total Pay
         table.addCell(createPayrollCell(formatCurrency(totalPay), 7));

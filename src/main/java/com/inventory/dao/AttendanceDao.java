@@ -145,6 +145,7 @@ public class AttendanceDao {
                 e.name as employee_name,
                 e.regular_pay,
                 e.wage_type,
+                e.regular_hours,
                 COALESCE(SUM(a.regular_hours), 0) as total_regular_hours,
                 COALESCE(SUM(a.overtime_hours), 0) as total_overtime_hours,
                 COALESCE(SUM(a.regular_pay), 0) as total_regular_pay,
@@ -154,7 +155,7 @@ public class AttendanceDao {
             LEFT JOIN attendance a ON e.id = a.employee_id 
                 AND DATE(a.start_date_time) BETWEEN :startDate AND :endDate
             WHERE e.status = 'A' AND e.client_id = :clientId
-            GROUP BY e.id, e.name, e.regular_pay, e.wage_type
+            GROUP BY e.id, e.name, e.regular_pay, e.wage_type, e.regular_hours
             ORDER BY e.name ASC
         """;
         
@@ -178,6 +179,7 @@ public class AttendanceDao {
             summary.put("employeeName", row[index++]);
             summary.put("regularPay", row[index++]);
             summary.put("wageType", row[index++]);
+            summary.put("regularHours", row[index++]);
             summary.put("totalRegularHours", row[index++]);
             summary.put("totalOvertimeHours", row[index++]);
             summary.put("totalRegularPay", row[index++]);
