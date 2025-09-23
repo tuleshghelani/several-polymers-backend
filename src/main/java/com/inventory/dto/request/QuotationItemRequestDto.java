@@ -37,6 +37,7 @@ public class QuotationItemRequestDto {
     private String remarks;
 //    private BigDecimal loadingCharge;
     private Boolean isProduction;
+    private Boolean isDispatch;
     private String quotationItemStatus;
     private List<String> quotationItemStatuses;
 

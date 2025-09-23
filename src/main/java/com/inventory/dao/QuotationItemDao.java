@@ -35,7 +35,7 @@ public class QuotationItemDao {
                 qi.discount_price, qi.quotation_discount_percentage, qi.quotation_discount_amount,
                 qi.quotation_discount_price, qi.tax_percentage, qi.tax_amount, qi.final_price,
                 qi.client_id, qi.brand_id, qi.number_of_roll, qi.created_roll, qi.weight_per_roll,
-                qi.remarks, qi.is_production, qi.quotation_item_status,
+                qi.remarks, qi.is_production, qi.is_dispatch, qi.quotation_item_status,
                 p.name as product_name, b.name as brand_name
             FROM quotation_items qi
             left join product p on p.id = qi.product_id
@@ -76,9 +76,10 @@ public class QuotationItemDao {
             m.put("weightPerRoll", r[16]);
             m.put("remarks", r[17]);
             m.put("isProduction", r[18]);
-            m.put("quotationItemStatus", r[19]);
-            m.put("productName", r[20]);
-            m.put("brandName", r[21]);
+            m.put("isDispatch", r[19]);
+            m.put("quotationItemStatus", r[20]);
+            m.put("productName", r[21]);
+            m.put("brandName", r[22]);
             content.add(m);
         }
 
@@ -97,6 +98,10 @@ public class QuotationItemDao {
         if (dto.getIsProduction() != null) {
             sql.append(" AND qi.is_production = :isProduction");
             params.put("isProduction", dto.getIsProduction());
+        }
+        if (dto.getIsDispatch() != null) {
+            sql.append(" AND qi.is_dispatch = :isDispatch");
+            params.put("isDispatch", dto.getIsDispatch());
         }
         if (dto.getQuotationItemStatuses() != null && !dto.getQuotationItemStatuses().isEmpty()) {
             sql.append(" AND qi.quotation_item_status IN (:status) ");

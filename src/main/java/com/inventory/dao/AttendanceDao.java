@@ -43,7 +43,7 @@ public class AttendanceDao {
             SELECT 
                 a.id, a.start_date_time, a.end_date_time, 
                 a.remarks, a.created_at,
-                e.id as employee_id, e.name as employee_name,
+                e.id as employee_id, e.name as employee_name, e.mobile_number,
                 a.regular_hours, a.overtime_hours, a.regular_pay, a.overtime_pay, a.total_pay
             FROM attendance a
             JOIN employee e ON a.employee_id = e.id
@@ -77,7 +77,8 @@ public class AttendanceDao {
             
             attendance.put("employee", Map.of(
                 "id", row[index++],
-                "name", row[index++]
+                "name", row[index++],
+                "mobileNumber", row[index++]
             ));
 
             attendance.put("regularHours", row[index++]);

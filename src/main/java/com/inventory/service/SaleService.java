@@ -13,6 +13,7 @@ import com.inventory.entity.UserMaster;
 import com.inventory.entity.QuotationItem;
 import com.inventory.entity.Quotation;
 import com.inventory.enums.QuotationStatusItem;
+import com.inventory.enums.QuotationStatus;
 import com.inventory.exception.ValidationException;
 import com.inventory.repository.CustomerRepository;
 import com.inventory.repository.ProductRepository;
@@ -202,7 +203,7 @@ public class SaleService {
             BigDecimal totalAmount = BigDecimal.ZERO;
             BigDecimal totalSaleDiscountAmount = BigDecimal.ZERO;
             for (QuotationItem qi : quotationItems) {
-                if (qi.getQuotationItemStatus().equals(QuotationStatusItem.B.value)) {
+                if (QuotationStatusItem.B.value.equals(qi.getQuotationItemStatus())) {
                     throw new ValidationException("Quotation item already billed");
                 }
                 qi.setQuotationItemStatus(QuotationStatusItem.B.value);
@@ -255,6 +256,15 @@ public class SaleService {
                         false,
                         true
                 );
+            }
+
+            // If all items of the parent quotation are billed, update quotation status to Invoiced
+            List<QuotationItem> allItemsOfQuotation = quotationItemRepository.findByQuotationId(parentQuotation.getId());
+            boolean allBilled = allItemsOfQuotation != null && !allItemsOfQuotation.isEmpty() && allItemsOfQuotation.stream()
+                    .allMatch(qi -> qi.getQuotationItemStatus() != null && QuotationStatusItem.B.value.equals(qi.getQuotationItemStatus()));
+            if (allBilled) {
+                parentQuotation.setStatus(QuotationStatus.I);
+                quotationRepository.save(parentQuotation);
             }
 
             return ApiResponse.success("Sale created successfully from quotation items");

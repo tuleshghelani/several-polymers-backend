@@ -101,6 +101,9 @@ public class QuotationItem {
     @Column(name = "is_production", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean isProduction = false;
 
+    @Column(name = "is_dispatch", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isDispatch = false;
+
     @Column(name = "quotation_item_status", length = 4)
     private String quotationItemStatus;
 

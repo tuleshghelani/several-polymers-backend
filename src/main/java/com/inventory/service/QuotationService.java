@@ -383,6 +383,9 @@ public class QuotationService {
         if(itemDto.getIsProduction() != null){
             item.setIsProduction(itemDto.getIsProduction());
         }
+        if(itemDto.getIsDispatch() != null){
+            item.setIsDispatch(itemDto.getIsDispatch());
+        }
         if(itemDto.getQuotationItemStatus()!=null){
             item.setQuotationItemStatus(itemDto.getQuotationItemStatus());
         }
@@ -496,6 +499,19 @@ public class QuotationService {
         }
         quotationItemRepository.save(item);
         return ApiResponse.success("Quotation item production flag updated successfully");
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<?> updateQuotationItemDispatch(QuotationItemRequestDto request) {
+        UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+        QuotationItem item = quotationItemRepository.findById(request.getId())
+                .orElseThrow(() -> new ValidationException("Quotation item not found"));
+        if (!item.getClient().getId().equals(currentUser.getClient().getId())) {
+            throw new ValidationException("Unauthorized access to quotation item");
+        }
+        item.setIsDispatch(request.getIsDispatch());
+        quotationItemRepository.save(item);
+        return ApiResponse.success("Quotation item dispatch flag updated successfully");
     }
 
     private void updateQuotationDetails(Quotation quotation, QuotationRequestDto request, UserMaster currentUser) {
@@ -682,6 +698,7 @@ public class QuotationService {
                 itemMap.put("numberOfRoll", item.getNumberOfRoll());
                 itemMap.put("createdRoll", item.getCreatedRoll());
                 itemMap.put("isProduction", item.getIsProduction());
+                itemMap.put("isDispatch", item.getIsDispatch());
                 itemMap.put("quotationItemStatus", item.getQuotationItemStatus());
                 itemMap.put("weightPerRoll", item.getWeightPerRoll());
                 itemMap.put("remarks", item.getRemarks());

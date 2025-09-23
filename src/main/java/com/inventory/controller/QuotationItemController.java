@@ -34,6 +34,12 @@ public class QuotationItemController {
         return ResponseEntity.ok(quotationService.updateQuotationItemProduction(request));
     }
 
+    @PutMapping("/dispatch")
+    public ResponseEntity<ApiResponse<?>> updateDispatch(@RequestBody QuotationItemRequestDto request) {
+        log.debug("Update quotation item dispatch for ID: {}", request.getId());
+        return ResponseEntity.ok(quotationService.updateQuotationItemDispatch(request));
+    }
+
     @PutMapping("/created-roll")
     public ResponseEntity<ApiResponse<?>> updateCreatedRoll(@RequestBody QuotationItemCreatedRollUpdateDto request) {
         log.debug("Update quotation item createdRoll for ID: {}", request.getId());
