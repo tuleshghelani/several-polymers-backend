@@ -24,9 +24,9 @@ public class EmployeeWithdrawDao {
         StringBuilder fromWhere = new StringBuilder();
         Map<String, Object> params = new HashMap<>();
 
-        select.append("SELECT ew.id, e.name AS employee_name, ew.employee_id, ew.withdraw_date, ew.payment, ew.remarks, ew.created_at ");
+        select.append("SELECT ew.id, e.name AS employee_name, e.mobile_number, ew.employee_id, ew.withdraw_date, ew.payment, ew.remarks, ew.created_at ");
         fromWhere.append("FROM (select * from employee_withdraw ew where ew.client_id = :clientId) ew ");
-        fromWhere.append("LEFT JOIN (select id, name from employee where client_id = :clientId) e ON e.id = ew.employee_id ");
+        fromWhere.append("LEFT JOIN (select id, name, mobile_number from employee where client_id = :clientId) e ON e.id = ew.employee_id ");
         fromWhere.append("WHERE 1=1 ");
         params.put("clientId", dto.getClientId());
 
@@ -71,11 +71,12 @@ public class EmployeeWithdrawDao {
             Map<String, Object> m = new HashMap<>();
             m.put("id", r[0]);
             m.put("employeeName", r[1]);
-            m.put("employeeId", r[2]);
-            m.put("withdrawDate", r[3]);
-            m.put("payment", r[4]);
-            m.put("remarks", r[5]);
-            m.put("createdAt", r[6]);
+            m.put("mobileNumber", r[2]);
+            m.put("employeeId", r[3]);
+            m.put("withdrawDate", r[4]);
+            m.put("payment", r[5]);
+            m.put("remarks", r[6]);
+            m.put("createdAt", r[7]);
             content.add(m);
         }
 
