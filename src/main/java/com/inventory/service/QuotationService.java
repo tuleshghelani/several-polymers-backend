@@ -276,25 +276,32 @@ public class QuotationService {
 
             updateQuotationDetails(quotation, request, currentUser);
 
-            // 1) Fetch billed items (status 'B') to preserve
+            // 1) Fetch billed items (status 'B') and dispatched items to preserve
             List<QuotationItem> billedItems = quotationItemRepository
                     .findByQuotationIdAndQuotationItemStatus(quotation.getId(), QuotationStatusItem.B.value);
+            List<QuotationItem> dispatchedItems = quotationItemRepository
+                    .findByQuotationIdAndIsDispatchTrue(quotation.getId());
 
-            java.util.Set<Long> billedItemIds = new java.util.HashSet<>();
+            java.util.Set<Long> preservedItemIds = new java.util.HashSet<>();
             for (QuotationItem bi : billedItems) {
                 if (bi.getId() != null) {
-                    billedItemIds.add(bi.getId());
+                    preservedItemIds.add(bi.getId());
+                }
+            }
+            for (QuotationItem di : dispatchedItems) {
+                if (di.getId() != null) {
+                    preservedItemIds.add(di.getId());
                 }
             }
 
             // 2) Delete only non-billed items
             quotationItemRepository.deleteNonBByQuotationId(quotation.getId(), QuotationStatusItem.B.value);
 
-            // 3) Remove preserved (billed) ids from incoming request before insert
+            // 3) Remove preserved (billed/dispatch) ids from incoming request before insert
             List<QuotationItemRequestDto> itemsToInsert = new ArrayList<>();
             for (QuotationItemRequestDto itemDto : request.getItems()) {
-                if (itemDto.getId() != null && billedItemIds.contains(itemDto.getId())) {
-                    // Skip inserting over billed items
+                if (itemDto.getId() != null && preservedItemIds.contains(itemDto.getId())) {
+                    // Skip inserting over preserved items
                     continue;
                 }
                 itemsToInsert.add(itemDto);

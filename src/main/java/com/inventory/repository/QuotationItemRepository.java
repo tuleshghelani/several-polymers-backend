@@ -20,6 +20,8 @@ public interface QuotationItemRepository extends JpaRepository<QuotationItem, Lo
 
     List<QuotationItem> findByQuotationIdAndQuotationItemStatus(Long quotationId, String quotationItemStatus);
 
+    List<QuotationItem> findByQuotationIdAndIsDispatchTrue(Long quotationId);
+
     @Modifying
     @Query("UPDATE QuotationItem qi SET qi.quotationItemStatus = :status WHERE qi.id = :id")
     int updateQuotationItemStatusById(Long id, String status);
@@ -50,6 +52,6 @@ public interface QuotationItemRepository extends JpaRepository<QuotationItem, Lo
     BigDecimal sumQuotationDiscountAmountByQuotationId(Long quotationId);
 
     @Modifying
-    @Query("DELETE FROM QuotationItem qi WHERE qi.quotation.id = :quotationId AND (qi.quotationItemStatus IS NULL OR qi.quotationItemStatus <> :statusToKeep)")
+    @Query("DELETE FROM QuotationItem qi WHERE qi.quotation.id = :quotationId AND (qi.quotationItemStatus IS NULL OR qi.quotationItemStatus <> :statusToKeep) AND qi.isDispatch = false")
     void deleteNonBByQuotationId(Long quotationId, String statusToKeep);
 }
