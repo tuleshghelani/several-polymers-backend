@@ -37,7 +37,7 @@ public class SaleItem {
     @Column(name = "unit_price", nullable = false, precision = 19, scale = 2)
     private BigDecimal unitPrice;
     
-    @Column(name = "discount_percentage", precision = 6, scale = 4, columnDefinition = "decimal(6,4) DEFAULT 0")
+    @Column(name = "discount_percentage", precision = 5, scale = 2, columnDefinition = "NUMERIC(5, 2) DEFAULT 0.00")
     private BigDecimal discountPercentage;
     
     @Column(name = "discount_amount", precision = 19, scale = 2, columnDefinition = "decimal(19,2) DEFAULT 0")
