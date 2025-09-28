@@ -178,11 +178,13 @@ public class SaleDao {
                 si.discount_price, si.tax_percentage, si.tax_amount,
                 p.name as product_name, p.tax_percentage,
                 si.number_of_roll, si.weight_per_roll,
-                s.transport_master_id, s.case_number, s.reference_name
+                s.transport_master_id, s.case_number, s.reference_name,
+                tm.name as transport_master_name
             FROM (SELECT * FROM sale WHERE id = :saleId AND client_id = :clientId) s
             LEFT JOIN (SELECT * FROM customer WHERE client_id = :clientId) c ON s.customer_id = c.id
             LEFT JOIN (SELECT * FROM sale_items WHERE sale_id = :saleId) si ON s.id = si.sale_id
             LEFT JOIN (SELECT * FROM product WHERE client_id = :clientId) p ON si.product_id = p.id
+            LEFT JOIN (SELECT * FROM transport_master WHERE client_id = :clientId) tm ON s.transport_master_id = tm.id
             WHERE s.id = :saleId
         """;
 
@@ -250,6 +252,7 @@ public class SaleDao {
 
         // transport and references (placed at root for now)
         response.put("transportMasterId", first[21]);
+        response.put("transportMasterName", first[24]);
         response.put("caseNumber", first[22]);
         response.put("referenceName", first[23]);
 

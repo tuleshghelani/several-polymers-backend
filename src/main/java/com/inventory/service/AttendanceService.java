@@ -110,6 +110,7 @@ public class AttendanceService {
             .overtimePay(overtimePay)
             .totalPay(totalPay)
             .remarks(request.getRemarks())
+            .shift(request.getShift() == null || request.getShift().isBlank() ? "D" : request.getShift())
             .client(currentUser.getClient())
             .createdBy(currentUser)
             .createdAt(OffsetDateTime.now())
@@ -182,6 +183,7 @@ public class AttendanceService {
             
             return ApiResponse.success("Attendance records retrieved successfully", result);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ValidationException("Failed to fetch attendance records: " + e.getMessage());
         }
     }

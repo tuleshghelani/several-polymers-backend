@@ -52,6 +52,10 @@ public class Attendance {
     @Column(name = "remarks", length = 255)
     private String remarks;
     
+    @Column(name = "shift", length = 1)
+    private String shift;
+    
+    @Builder.Default
     @Column(name = "created_at", nullable = false, length = 29, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt = OffsetDateTime.now();
     

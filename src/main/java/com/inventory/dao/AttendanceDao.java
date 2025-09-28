@@ -44,7 +44,8 @@ public class AttendanceDao {
                 a.id, a.start_date_time, a.end_date_time, 
                 a.remarks, a.created_at,
                 e.id as employee_id, e.name as employee_name, e.mobile_number,
-                a.regular_hours, a.overtime_hours, a.regular_pay, a.overtime_pay, a.total_pay
+                a.regular_hours, a.overtime_hours, a.regular_pay, a.overtime_pay, a.total_pay,
+                a.shift
             FROM attendance a
             JOIN employee e ON a.employee_id = e.id
         """ + baseCondition + 
@@ -86,6 +87,7 @@ public class AttendanceDao {
             attendance.put("regularPay", row[index++]);
             attendance.put("overtimePay", row[index++]);
             attendance.put("totalPay", row[index++]);
+            attendance.put("shift", row[index++]);
             
             attendances.add(attendance);
         }
@@ -100,7 +102,7 @@ public class AttendanceDao {
     public List<Map<String, Object>> getMonthlyAttendance(Long employeeId, LocalDate startDate, LocalDate endDate) {
         String sql = """
             select DATE(a.start_date_time) as attendance_date, a.start_date_time, a.end_date_time,
-            a.regular_hours, a.overtime_hours, a.regular_pay, a.overtime_pay , a.total_pay        \s
+            a.regular_hours, a.overtime_hours, a.regular_pay, a.overtime_pay , a.total_pay, a.shift       \s
                 FROM
                     attendance a        \s
                 WHERE a.employee_id = :employeeId
@@ -133,6 +135,7 @@ public class AttendanceDao {
             attendance.put("regular_pay", row[index++]);
             attendance.put("overtime_pay", row[index++]);
             attendance.put("total_pay", row[index++]);
+            attendance.put("shift", row[index++]);
             attendances.add(attendance);
         }
         

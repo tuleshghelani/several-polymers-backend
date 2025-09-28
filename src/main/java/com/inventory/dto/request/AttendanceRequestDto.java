@@ -29,4 +29,7 @@ public class AttendanceRequestDto {
     private OffsetDateTime endDateTime;
     
     private String remarks;
+    
+    // 'D' for Day, 'N' for Night. Optional; defaults to 'D' if not provided
+    private String shift;
 }

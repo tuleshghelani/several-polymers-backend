@@ -110,7 +110,7 @@ public class SalePdfGenerationService {
                 "Mobile No.", formatValue(data.get("contactNumber")));
 
         addDetailPair(detailsTable,
-                "Transport", formatValue(data.get("transportMasterId")),
+                "Transport", formatValue(data.get("transportMasterName")),
                 "Case Number", formatValue(data.get("caseNumber")));
 
         addDetailPair(detailsTable,
