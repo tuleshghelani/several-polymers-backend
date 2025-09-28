@@ -169,12 +169,12 @@ public class AttendancePdfService {
     }
     
     private void addAttendanceTable(Document document, List<Map<String, Object>> records) {
-        Table table = new Table(new float[]{1, 4, 2, 2, 1.2f, 1.2f, 2})
+        Table table = new Table(new float[]{1, 3.5f, 1.5f, 1.5f, 0.8f, 1.2f, 1.2f, 1.8f})
             .useAllAvailableWidth()
             .setMarginTop(20);
 
         addTableHeader(table, new String[]{
-            "No", "Date", "Start Time", "End Time", 
+            "No", "Date", "Start Time", "End Time", "Shift",
             "Regular Hours", "Overtime Hours", "Total Pay"
         });
 
@@ -312,6 +312,10 @@ public class AttendancePdfService {
             throw new ValidationException("Unsupported time type: " + endTimeObj.getClass());
         }
         table.addCell(createCell(endTime));
+
+        // Add shift
+        String shift = (String) record.get("shift");
+        table.addCell(createCell(shift != null ? shift : "D"));
 
         BigDecimal regularHours = (BigDecimal) record.get("regular_hours");
         table.addCell(createCell(String.format("%s ", formatNumber(regularHours))));
