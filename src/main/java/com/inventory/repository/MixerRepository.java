@@ -6,10 +6,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface MixerRepository extends JpaRepository<Mixer, Long> {
     @Modifying
     @Query(value = "DELETE FROM mixer WHERE bach_id = :bachId", nativeQuery = true)
     void deleteByBachId(@Param("bachId") Long bachId);
+    
+    List<Mixer> findByBachId(Long bachId);
 }
 
 

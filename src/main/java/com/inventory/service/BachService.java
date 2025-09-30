@@ -13,6 +13,7 @@ import com.inventory.repository.MachineMasterRepository;
 import com.inventory.repository.MixerRepository;
 import com.inventory.repository.ProductionRepository;
 import com.inventory.entity.Mixer;
+import com.inventory.entity.Product;
 import com.inventory.entity.Production;
 import com.inventory.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class BachService {
     private final MixerRepository mixerRepository;
     private final ProductionRepository productionRepository;
     private final ProductRepository productRepository;
+    private final ProductQuantityService productQuantityService;
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> create(BachDto dto) {
@@ -109,6 +111,11 @@ public class BachService {
             if (!b.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
             }
+            
+            // Revert quantities before deleting the bach
+            revertMixerQuantities(b.getId());
+            revertProductionQuantities(b.getId());
+            
             bachRepository.delete(b);
             return ApiResponse.success("Bach deleted successfully");
         } catch (ValidationException e) {
@@ -240,30 +247,66 @@ public class BachService {
                 bach = bachRepository.save(bach);
             }
 
+            // Handle mixer items with quantity updates
             if (req.getMixer() != null) {
+                // If updating, first revert previous mixer quantities
+                if (!creating) {
+                    revertMixerQuantities(bach.getId());
+                }
+                
                 mixerRepository.deleteByBachId(bach.getId());
                 for (BachUpsertRequestDto.MixerItem item : req.getMixer()) {
+                    Product product = productRepository.findById(item.getProductId())
+                            .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.NOT_FOUND));
+                    
+                    // Create mixer record
                     Mixer m = new Mixer();
                     m.setBach(bach);
-                    m.setProduct(productRepository.findById(item.getProductId())
-                            .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.NOT_FOUND)));
+                    m.setProduct(product);
                     m.setQuantity(item.getQuantity());
                     m.setClient(currentUser.getClient());
                     mixerRepository.save(m);
+                    
+                    // Update product quantity (subtract for mixer consumption)
+                    productQuantityService.updateProductQuantity(
+                        product.getId(), 
+                        item.getQuantity(), 
+                        false, // isPurchase
+                        true,  // isSale (consumption)
+                        null   // isBlock
+                    );
                 }
             }
 
+            // Handle production items with quantity updates
             if (req.getProduction() != null) {
+                // If updating, first revert previous production quantities
+                if (!creating) {
+                    revertProductionQuantities(bach.getId());
+                }
+                
                 productionRepository.deleteByBachId(bach.getId());
                 for (BachUpsertRequestDto.ProductionItem item : req.getProduction()) {
+                    Product product = productRepository.findById(item.getProductId())
+                            .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.NOT_FOUND));
+                    
+                    // Create production record
                     Production p = new Production();
                     p.setBach(bach);
-                    p.setProduct(productRepository.findById(item.getProductId())
-                            .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.NOT_FOUND)));
+                    p.setProduct(product);
                     p.setQuantity(item.getQuantity());
                     p.setNumberOfRoll(item.getNumberOfRoll());
                     p.setClient(currentUser.getClient());
                     productionRepository.save(p);
+                    
+                    // Update product quantity (add for production output)
+                    productQuantityService.updateProductQuantity(
+                        product.getId(), 
+                        item.getQuantity(), 
+                        true,  // isPurchase (production)
+                        false, // isSale
+                        null   // isBlock
+                    );
                 }
             }
             return ApiResponse.success(creating ? "Bach created successfully" : "Bach updated successfully");
@@ -271,6 +314,58 @@ public class BachService {
             throw e;
         } catch (Exception e) {
             throw new ValidationException("Failed to upsert bach", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Reverts mixer quantities by adding them back to product stock
+     * This is called when updating a bach to undo previous mixer consumption
+     */
+    private void revertMixerQuantities(Long bachId) {
+        try {
+            var existingMixers = mixerRepository.findByBachId(bachId);
+            for (Mixer mixer : existingMixers) {
+                if (mixer.getProduct() != null && mixer.getQuantity() != null) {
+                    // Add back the quantity that was previously consumed
+                    productQuantityService.updateProductQuantity(
+                        mixer.getProduct().getId(),
+                        mixer.getQuantity(),
+                        true,  // isPurchase (adding back)
+                        false, // isSale
+                        null   // isBlock
+                    );
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the transaction
+            // This ensures the main operation can continue
+            System.err.println("Error reverting mixer quantities for bach " + bachId + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Reverts production quantities by subtracting them from product stock
+     * This is called when updating a bach to undo previous production output
+     */
+    private void revertProductionQuantities(Long bachId) {
+        try {
+            var existingProductions = productionRepository.findByBachId(bachId);
+            for (Production production : existingProductions) {
+                if (production.getProduct() != null && production.getQuantity() != null) {
+                    // Subtract the quantity that was previously produced
+                    productQuantityService.updateProductQuantity(
+                        production.getProduct().getId(),
+                        production.getQuantity(),
+                        false, // isPurchase
+                        true,  // isSale (removing production)
+                        null   // isBlock
+                    );
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the transaction
+            // This ensures the main operation can continue
+            System.err.println("Error reverting production quantities for bach " + bachId + ": " + e.getMessage());
         }
     }
 }
