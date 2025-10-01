@@ -28,14 +28,14 @@ public class BachUpsertRequestDto {
 
     @Data
     public static class MixerItem {
-        private Long bachId; // optional when creating
+        private Long batchId; // optional when creating
         private Long productId;
         private BigDecimal quantity;
     }
 
     @Data
     public static class ProductionItem {
-        private Long bachId; // optional when creating
+        private Long batchId; // optional when creating
         private Long productId;
         private BigDecimal quantity;
         private Integer numberOfRoll;

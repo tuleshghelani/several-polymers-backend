@@ -3,7 +3,7 @@ package com.inventory.service;
 import com.inventory.dao.ProductionDao;
 import com.inventory.dto.ApiResponse;
 import com.inventory.dto.ProductionDto;
-import com.inventory.entity.Bach;
+import com.inventory.entity.Batch;
 import com.inventory.entity.Product;
 import com.inventory.entity.Production;
 import com.inventory.entity.UserMaster;
@@ -32,16 +32,16 @@ public class ProductionService {
         try {
             validate(dto);
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            Bach bach = bachRepository.findById(dto.getBachId())
+            Batch batch = bachRepository.findById(dto.getBatchId())
                     .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
-            if (!bach.getClient().getId().equals(currentUser.getClient().getId())) {
+            if (!batch.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
             }
             Product product = productRepository.findById(dto.getProductId())
                     .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.NOT_FOUND));
 
             Production p = new Production();
-            p.setBach(bach);
+            p.setBatch(batch);
             p.setProduct(product);
             p.setQuantity(dto.getQuantity());
             p.setNumberOfRoll(dto.getNumberOfRoll());
@@ -64,13 +64,13 @@ public class ProductionService {
             if (!p.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
             }
-            if (dto.getBachId() != null) {
-                Bach bach = bachRepository.findById(dto.getBachId())
+            if (dto.getBatchId() != null) {
+                Batch batch = bachRepository.findById(dto.getBatchId())
                         .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
-                if (!bach.getClient().getId().equals(currentUser.getClient().getId())) {
+                if (!batch.getClient().getId().equals(currentUser.getClient().getId())) {
                     throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
                 }
-                p.setBach(bach);
+                p.setBatch(batch);
             }
             if (dto.getProductId() != null) {
                 Product product = productRepository.findById(dto.getProductId())
@@ -127,7 +127,7 @@ public class ProductionService {
             }
             ProductionDto dto = new ProductionDto();
             dto.setId(p.getId());
-            dto.setBachId(p.getBach() != null ? p.getBach().getId() : null);
+            dto.setBatchId(p.getBatch() != null ? p.getBatch().getId() : null);
             dto.setProductId(p.getProduct() != null ? p.getProduct().getId() : null);
             dto.setQuantity(p.getQuantity());
             dto.setNumberOfRoll(p.getNumberOfRoll());
@@ -140,8 +140,8 @@ public class ProductionService {
     }
 
     private void validate(ProductionDto dto) {
-        if (dto == null || dto.getBachId() == null || dto.getProductId() == null || dto.getQuantity() == null) {
-            throw new ValidationException("bachId, productId and quantity are required", HttpStatus.BAD_REQUEST);
+        if (dto == null || dto.getBatchId() == null || dto.getProductId() == null || dto.getQuantity() == null) {
+            throw new ValidationException("batchId, productId and quantity are required", HttpStatus.BAD_REQUEST);
         }
     }
 }

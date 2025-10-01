@@ -15,7 +15,7 @@ public class BachDao {
     private EntityManager entityManager;
 
     public Map<String, Object> search(BachDto dto) {
-        StringBuilder countSql = new StringBuilder("SELECT COUNT(b.id) FROM bach b WHERE 1=1");
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(b.id) FROM batch b WHERE 1=1");
         Map<String, Object> params = new HashMap<>();
         appendConditions(countSql, params, dto);
 
@@ -27,7 +27,7 @@ public class BachDao {
         sql.append("""
             SELECT b.id, b.date, b.shift, b.name, b.resign_bag_use, b.resign_bag_opening_stock,
                    b.cpw_bag_use, b.cpw_bag_opening_stock, b.machine_id
-            FROM bach b
+            FROM batch b
             WHERE 1=1
         """);
         appendConditions(sql, params, dto);

@@ -44,7 +44,7 @@ public class MixerDao {
         for (Object[] row : results) {
             Map<String, Object> map = new HashMap<>();
             map.put("id", row[0]);
-            map.put("bachId", row[1]);
+            map.put("batchId", row[1]);
             map.put("productId", row[2]);
             map.put("quantity", row[3]);
             content.add(map);
@@ -58,9 +58,9 @@ public class MixerDao {
     private void appendConditions(StringBuilder sql, Map<String, Object> params, MixerDto dto) {
         sql.append(" AND m.client_id = :clientId");
         params.put("clientId", dto.getClientId());
-        if (dto.getBachId() != null) {
-            sql.append(" AND m.bach_id = :bachId");
-            params.put("bachId", dto.getBachId());
+        if (dto.getBatchId() != null) {
+            sql.append(" AND m.bach_id = :batchId");
+            params.put("batchId", dto.getBatchId());
         }
         if (dto.getProductId() != null) {
             sql.append(" AND m.product_id = :productId");

@@ -44,7 +44,7 @@ public class ProductionDao {
         for (Object[] row : results) {
             Map<String, Object> map = new HashMap<>();
             map.put("id", row[0]);
-            map.put("bachId", row[1]);
+            map.put("batchId", row[1]);
             map.put("productId", row[2]);
             map.put("quantity", row[3]);
             map.put("numberOfRoll", row[4]);
@@ -59,9 +59,9 @@ public class ProductionDao {
     private void appendConditions(StringBuilder sql, Map<String, Object> params, ProductionDto dto) {
         sql.append(" AND p.client_id = :clientId");
         params.put("clientId", dto.getClientId());
-        if (dto.getBachId() != null) {
-            sql.append(" AND p.bach_id = :bachId");
-            params.put("bachId", dto.getBachId());
+        if (dto.getBatchId() != null) {
+            sql.append(" AND p.bach_id = :batchId");
+            params.put("batchId", dto.getBatchId());
         }
         if (dto.getProductId() != null) {
             sql.append(" AND p.product_id = :productId");

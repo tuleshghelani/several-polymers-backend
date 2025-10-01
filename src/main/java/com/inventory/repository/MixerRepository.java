@@ -10,10 +10,10 @@ import java.util.List;
 
 public interface MixerRepository extends JpaRepository<Mixer, Long> {
     @Modifying
-    @Query(value = "DELETE FROM mixer WHERE bach_id = :bachId", nativeQuery = true)
-    void deleteByBachId(@Param("bachId") Long bachId);
+    @Query(value = "DELETE FROM mixer WHERE bach_id = :batchId", nativeQuery = true)
+    void deleteByBatchId(@Param("batchId") Long batchId);
     
-    List<Mixer> findByBachId(Long bachId);
+    List<Mixer> findByBatchId(Long batchId);
 }
 
 

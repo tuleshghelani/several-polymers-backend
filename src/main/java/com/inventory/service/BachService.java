@@ -3,18 +3,13 @@ package com.inventory.service;
 import com.inventory.dao.BachDao;
 import com.inventory.dto.ApiResponse;
 import com.inventory.dto.BachDto;
-import com.inventory.entity.Bach;
-import com.inventory.entity.MachineMaster;
-import com.inventory.entity.UserMaster;
+import com.inventory.entity.*;
 import com.inventory.dto.request.BachUpsertRequestDto;
 import com.inventory.exception.ValidationException;
 import com.inventory.repository.BachRepository;
 import com.inventory.repository.MachineMasterRepository;
 import com.inventory.repository.MixerRepository;
 import com.inventory.repository.ProductionRepository;
-import com.inventory.entity.Mixer;
-import com.inventory.entity.Product;
-import com.inventory.entity.Production;
 import com.inventory.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -43,7 +38,7 @@ public class BachService {
         try {
             validateCreate(dto);
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            Bach b = new Bach();
+            Batch b = new Batch();
             b.setDate(dto.getDate());
             b.setShift(dto.getShift().trim());
             b.setName(generateBachName(dto.getDate()));
@@ -73,7 +68,7 @@ public class BachService {
         try {
             if (id == null) throw new ValidationException("Id is required", HttpStatus.BAD_REQUEST);
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            Bach b = bachRepository.findById(id)
+            Batch b = bachRepository.findById(id)
                     .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
             if (!b.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
@@ -108,7 +103,7 @@ public class BachService {
     public ApiResponse<?> delete(Long id) {
         try {
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            Bach b = bachRepository.findById(id)
+            Batch b = bachRepository.findById(id)
                     .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
             if (!b.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
@@ -141,7 +136,7 @@ public class BachService {
     public ApiResponse<?> getDetails(Long id) {
         try {
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            Bach b = bachRepository.findById(id)
+            Batch b = bachRepository.findById(id)
                     .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
             if (!b.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
@@ -171,7 +166,7 @@ public class BachService {
             }
             
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            Bach b = bachRepository.findById(request.getId())
+            Batch b = bachRepository.findById(request.getId())
                     .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
             if (!b.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
@@ -199,13 +194,13 @@ public class BachService {
             response.setUpdatedAt(null); // Bach entity doesn't have updatedAt field
             
             // Get mixer items with full product details
-            List<Mixer> mixers = mixerRepository.findByBachId(request.getId());
+            List<Mixer> mixers = mixerRepository.findByBatchId(request.getId());
             response.setMixerItems(mixers.stream()
                 .map(this::mapMixerToDetailDto)
                 .collect(Collectors.toList()));
             
             // Get production items with full product details
-            List<Production> productions = productionRepository.findByBachId(request.getId());
+            List<Production> productions = productionRepository.findByBatchId(request.getId());
             response.setProductionItems(productions.stream()
                 .map(this::mapProductionToDetailDto)
                 .collect(Collectors.toList()));
@@ -268,56 +263,56 @@ public class BachService {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
             }
 
-            Bach bach;
+            Batch batch;
             boolean creating = (req.getId() == null);
             if (creating) {
-                bach = new Bach();
-                bach.setCreatedBy(currentUser);
-                bach.setClient(currentUser.getClient());
-                bach.setDate(req.getDate());
-                bach.setShift(req.getShift().trim());
-                bach.setName(generateBachName(req.getDate()));
-                bach.setResignBagUse(req.getResignBagUse());
-                bach.setResignBagOpeningStock(req.getResignBagOpeningStock());
-                bach.setCpwBagUse(req.getCpwBagUse());
-                bach.setCpwBagOpeningStock(req.getCpwBagOpeningStock());
-                bach.setMachine(machine);
-                bach = bachRepository.save(bach);
+                batch = new Batch();
+                batch.setCreatedBy(currentUser);
+                batch.setClient(currentUser.getClient());
+                batch.setDate(req.getDate());
+                batch.setShift(req.getShift().trim());
+                batch.setName(generateBachName(req.getDate()));
+                batch.setResignBagUse(req.getResignBagUse());
+                batch.setResignBagOpeningStock(req.getResignBagOpeningStock());
+                batch.setCpwBagUse(req.getCpwBagUse());
+                batch.setCpwBagOpeningStock(req.getCpwBagOpeningStock());
+                batch.setMachine(machine);
+                batch = bachRepository.save(batch);
             } else {
-                bach = bachRepository.findById(req.getId())
+                batch = bachRepository.findById(req.getId())
                         .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
-                if (!bach.getClient().getId().equals(currentUser.getClient().getId())) {
+                if (!batch.getClient().getId().equals(currentUser.getClient().getId())) {
                     throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
                 }
-                boolean dateChanged = req.getDate() != null && !req.getDate().equals(bach.getDate());
-                if (req.getDate() != null) bach.setDate(req.getDate());
-                if (StringUtils.hasText(req.getShift())) bach.setShift(req.getShift().trim());
-                if (req.getResignBagUse() != null) bach.setResignBagUse(req.getResignBagUse());
-                if (req.getResignBagOpeningStock() != null) bach.setResignBagOpeningStock(req.getResignBagOpeningStock());
-                if (req.getCpwBagUse() != null) bach.setCpwBagUse(req.getCpwBagUse());
-                if (req.getCpwBagOpeningStock() != null) bach.setCpwBagOpeningStock(req.getCpwBagOpeningStock());
-                bach.setMachine(machine);
+                boolean dateChanged = req.getDate() != null && !req.getDate().equals(batch.getDate());
+                if (req.getDate() != null) batch.setDate(req.getDate());
+                if (StringUtils.hasText(req.getShift())) batch.setShift(req.getShift().trim());
+                if (req.getResignBagUse() != null) batch.setResignBagUse(req.getResignBagUse());
+                if (req.getResignBagOpeningStock() != null) batch.setResignBagOpeningStock(req.getResignBagOpeningStock());
+                if (req.getCpwBagUse() != null) batch.setCpwBagUse(req.getCpwBagUse());
+                if (req.getCpwBagOpeningStock() != null) batch.setCpwBagOpeningStock(req.getCpwBagOpeningStock());
+                batch.setMachine(machine);
                 if (dateChanged) {
-                    bach.setName(generateBachName(bach.getDate()));
+                    batch.setName(generateBachName(batch.getDate()));
                 }
-                bach = bachRepository.save(bach);
+                batch = bachRepository.save(batch);
             }
 
             // Handle mixer items with quantity updates
             if (req.getMixer() != null) {
                 // If updating, first revert previous mixer quantities
                 if (!creating) {
-                    revertMixerQuantities(bach.getId());
+                    revertMixerQuantities(batch.getId());
                 }
                 
-                mixerRepository.deleteByBachId(bach.getId());
+                mixerRepository.deleteByBatchId(batch.getId());
                 for (BachUpsertRequestDto.MixerItem item : req.getMixer()) {
                     Product product = productRepository.findById(item.getProductId())
                             .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.NOT_FOUND));
                     
                     // Create mixer record
                     Mixer m = new Mixer();
-                    m.setBach(bach);
+                    m.setBatch(batch);
                     m.setProduct(product);
                     m.setQuantity(item.getQuantity());
                     m.setClient(currentUser.getClient());
@@ -338,17 +333,17 @@ public class BachService {
             if (req.getProduction() != null) {
                 // If updating, first revert previous production quantities
                 if (!creating) {
-                    revertProductionQuantities(bach.getId());
+                    revertProductionQuantities(batch.getId());
                 }
                 
-                productionRepository.deleteByBachId(bach.getId());
+                productionRepository.deleteByBatchId(batch.getId());
                 for (BachUpsertRequestDto.ProductionItem item : req.getProduction()) {
                     Product product = productRepository.findById(item.getProductId())
                             .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.NOT_FOUND));
                     
                     // Create production record
                     Production p = new Production();
-                    p.setBach(bach);
+                    p.setBatch(batch);
                     p.setProduct(product);
                     p.setQuantity(item.getQuantity());
                     p.setNumberOfRoll(item.getNumberOfRoll());
@@ -377,9 +372,9 @@ public class BachService {
      * Reverts mixer quantities by adding them back to product stock
      * This is called when updating a bach to undo previous mixer consumption
      */
-    private void revertMixerQuantities(Long bachId) {
+    private void revertMixerQuantities(Long batchId) {
         try {
-            var existingMixers = mixerRepository.findByBachId(bachId);
+            var existingMixers = mixerRepository.findByBatchId(batchId);
             for (Mixer mixer : existingMixers) {
                 if (mixer.getProduct() != null && mixer.getQuantity() != null) {
                     // Add back the quantity that was previously consumed
@@ -395,7 +390,7 @@ public class BachService {
         } catch (Exception e) {
             // Log error but don't fail the transaction
             // This ensures the main operation can continue
-            System.err.println("Error reverting mixer quantities for bach " + bachId + ": " + e.getMessage());
+            System.err.println("Error reverting mixer quantities for bach " + batchId + ": " + e.getMessage());
         }
     }
 
@@ -403,9 +398,9 @@ public class BachService {
      * Reverts production quantities by subtracting them from product stock
      * This is called when updating a bach to undo previous production output
      */
-    private void revertProductionQuantities(Long bachId) {
+    private void revertProductionQuantities(Long batchId) {
         try {
-            var existingProductions = productionRepository.findByBachId(bachId);
+            var existingProductions = productionRepository.findByBatchId(batchId);
             for (Production production : existingProductions) {
                 if (production.getProduct() != null && production.getQuantity() != null) {
                     // Subtract the quantity that was previously produced
@@ -421,7 +416,7 @@ public class BachService {
         } catch (Exception e) {
             // Log error but don't fail the transaction
             // This ensures the main operation can continue
-            System.err.println("Error reverting production quantities for bach " + bachId + ": " + e.getMessage());
+            System.err.println("Error reverting production quantities for bach " + batchId + ": " + e.getMessage());
         }
     }
 

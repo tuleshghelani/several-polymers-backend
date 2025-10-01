@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MixerDto {
     private Long id;
-    private Long bachId;
+    private Long batchId;
     private Long productId;
     private BigDecimal quantity;
     private Long clientId;

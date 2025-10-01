@@ -3,7 +3,7 @@ package com.inventory.service;
 import com.inventory.dao.MixerDao;
 import com.inventory.dto.ApiResponse;
 import com.inventory.dto.MixerDto;
-import com.inventory.entity.Bach;
+import com.inventory.entity.Batch;
 import com.inventory.entity.Mixer;
 import com.inventory.entity.Product;
 import com.inventory.entity.UserMaster;
@@ -32,16 +32,16 @@ public class MixerService {
         try {
             validate(dto);
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
-            Bach bach = bachRepository.findById(dto.getBachId())
+            Batch batch = bachRepository.findById(dto.getBatchId())
                     .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
-            if (!bach.getClient().getId().equals(currentUser.getClient().getId())) {
+            if (!batch.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
             }
             Product product = productRepository.findById(dto.getProductId())
                     .orElseThrow(() -> new ValidationException("Product not found", HttpStatus.NOT_FOUND));
 
             Mixer m = new Mixer();
-            m.setBach(bach);
+            m.setBatch(batch);
             m.setProduct(product);
             m.setQuantity(dto.getQuantity());
             m.setClient(currentUser.getClient());
@@ -63,13 +63,13 @@ public class MixerService {
             if (!m.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
             }
-            if (dto.getBachId() != null) {
-                Bach bach = bachRepository.findById(dto.getBachId())
+            if (dto.getBatchId() != null) {
+                Batch batch = bachRepository.findById(dto.getBatchId())
                         .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
-                if (!bach.getClient().getId().equals(currentUser.getClient().getId())) {
+                if (!batch.getClient().getId().equals(currentUser.getClient().getId())) {
                     throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
                 }
-                m.setBach(bach);
+                m.setBatch(batch);
             }
             if (dto.getProductId() != null) {
                 Product product = productRepository.findById(dto.getProductId())
@@ -125,7 +125,7 @@ public class MixerService {
             }
             MixerDto dto = new MixerDto();
             dto.setId(m.getId());
-            dto.setBachId(m.getBach() != null ? m.getBach().getId() : null);
+            dto.setBatchId(m.getBatch() != null ? m.getBatch().getId() : null);
             dto.setProductId(m.getProduct() != null ? m.getProduct().getId() : null);
             dto.setQuantity(m.getQuantity());
             return ApiResponse.success("Mixer details fetched", dto);
@@ -137,8 +137,8 @@ public class MixerService {
     }
 
     private void validate(MixerDto dto) {
-        if (dto == null || dto.getBachId() == null || dto.getProductId() == null || dto.getQuantity() == null) {
-            throw new ValidationException("bachId, productId and quantity are required", HttpStatus.BAD_REQUEST);
+        if (dto == null || dto.getBatchId() == null || dto.getProductId() == null || dto.getQuantity() == null) {
+            throw new ValidationException("batchId, productId and quantity are required", HttpStatus.BAD_REQUEST);
         }
     }
 }

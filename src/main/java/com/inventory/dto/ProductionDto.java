@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProductionDto {
     private Long id;
-    private Long bachId;
+    private Long batchId;
     private Long productId;
     private BigDecimal quantity;
     private Integer numberOfRoll;
