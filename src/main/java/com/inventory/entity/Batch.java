@@ -13,20 +13,20 @@ import java.time.OffsetDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "bach", indexes = {
-        @Index(name = "idx_bach_date", columnList = "date"),
-        @Index(name = "idx_bach_shift", columnList = "shift"),
-        @Index(name = "idx_bach_machine_id", columnList = "machine_id"),
-        @Index(name = "idx_bach_name", columnList = "name"),
-        @Index(name = "idx_bach_client_id", columnList = "client_id")
+@Table(name = "batch", indexes = {
+        @Index(name = "idx_batch_date", columnList = "date"),
+        @Index(name = "idx_batch_shift", columnList = "shift"),
+        @Index(name = "idx_batch_machine_id", columnList = "machine_id"),
+        @Index(name = "idx_batch_name", columnList = "name"),
+        @Index(name = "idx_batch_client_id", columnList = "client_id")
 })
-public class Bach {
+public class Batch {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_bach_created_by_user_master_id"))
+    @JoinColumn(name = "created_by", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_batch_created_by_user_master_id"))
     private UserMaster createdBy;
 
     @Column(name = "created_at", length = 29, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
@@ -54,11 +54,11 @@ public class Bach {
     private BigDecimal cpwBagOpeningStock = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "machine_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_bach_machine_id_machine_master_id"))
+    @JoinColumn(name = "machine_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_batch_machine_id_machine_master_id"))
     private MachineMaster machine;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_bach_client_id_client_id"))
+    @JoinColumn(name = "client_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_batch_client_id_client_id"))
     private Client client;
 }
 
