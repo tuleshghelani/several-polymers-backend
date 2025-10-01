@@ -22,7 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -159,6 +161,60 @@ public class BachService {
             throw e;
         } catch (Exception e) {
             throw new ValidationException("Failed to fetch bach details", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public ApiResponse<BachDto> getFullDetails(BachDto request) {
+        try {
+            if (request.getId() == null) {
+                throw new ValidationException("Bach ID is required", HttpStatus.BAD_REQUEST);
+            }
+            
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            Bach b = bachRepository.findById(request.getId())
+                    .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
+            if (!b.getClient().getId().equals(currentUser.getClient().getId())) {
+                throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
+            }
+            
+            BachDto response = new BachDto();
+            
+            // Basic bach information
+            response.setId(b.getId());
+            response.setDate(b.getDate());
+            response.setShift(b.getShift());
+            response.setName(b.getName());
+            response.setResignBagUse(b.getResignBagUse());
+            response.setResignBagOpeningStock(b.getResignBagOpeningStock());
+            response.setCpwBagUse(b.getCpwBagUse());
+            response.setCpwBagOpeningStock(b.getCpwBagOpeningStock());
+            response.setMachineId(b.getMachine() != null ? b.getMachine().getId() : null);
+            response.setMachineName(b.getMachine() != null ? b.getMachine().getName() : null);
+            response.setClientId(b.getClient() != null ? b.getClient().getId() : null);
+            response.setClientName(b.getClient() != null ? b.getClient().getName() : null);
+            response.setCreatedBy(b.getCreatedBy() != null ? 
+                (b.getCreatedBy().getFirstName() != null ? b.getCreatedBy().getFirstName() : "") + 
+                (b.getCreatedBy().getLastName() != null ? " " + b.getCreatedBy().getLastName() : "") : null);
+            response.setCreatedAt(b.getCreatedAt() != null ? b.getCreatedAt().toString() : null);
+            response.setUpdatedAt(null); // Bach entity doesn't have updatedAt field
+            
+            // Get mixer items with full product details
+            List<Mixer> mixers = mixerRepository.findByBachId(request.getId());
+            response.setMixerItems(mixers.stream()
+                .map(this::mapMixerToDetailDto)
+                .collect(Collectors.toList()));
+            
+            // Get production items with full product details
+            List<Production> productions = productionRepository.findByBachId(request.getId());
+            response.setProductionItems(productions.stream()
+                .map(this::mapProductionToDetailDto)
+                .collect(Collectors.toList()));
+            
+            return ApiResponse.success("Bach full details fetched", response);
+        } catch (ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ValidationException("Failed to fetch bach full details", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -367,6 +423,55 @@ public class BachService {
             // This ensures the main operation can continue
             System.err.println("Error reverting production quantities for bach " + bachId + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * Maps Mixer entity to MixerDetailDto with full product information
+     */
+    private BachDto.MixerDetailDto mapMixerToDetailDto(Mixer mixer) {
+        BachDto.MixerDetailDto dto = new BachDto.MixerDetailDto();
+        
+        dto.setId(mixer.getId());
+        dto.setProductId(mixer.getProduct() != null ? mixer.getProduct().getId() : null);
+        dto.setProductName(mixer.getProduct() != null ? mixer.getProduct().getName() : null);
+        dto.setProductDescription(mixer.getProduct() != null ? mixer.getProduct().getDescription() : null);
+        dto.setProductMeasurement(mixer.getProduct() != null ? mixer.getProduct().getMeasurement() : null);
+        dto.setProductWeight(mixer.getProduct() != null ? mixer.getProduct().getWeight() : null);
+        dto.setProductPurchaseAmount(mixer.getProduct() != null ? mixer.getProduct().getPurchaseAmount() : null);
+        dto.setProductSaleAmount(mixer.getProduct() != null ? mixer.getProduct().getSaleAmount() : null);
+        dto.setProductRemainingQuantity(mixer.getProduct() != null ? mixer.getProduct().getRemainingQuantity() : null);
+        dto.setProductTaxPercentage(mixer.getProduct() != null ? mixer.getProduct().getTaxPercentage() : null);
+        dto.setProductStatus(mixer.getProduct() != null ? mixer.getProduct().getStatus() : null);
+        dto.setQuantity(mixer.getQuantity());
+        dto.setCategoryName(mixer.getProduct() != null && mixer.getProduct().getCategory() != null ? 
+            mixer.getProduct().getCategory().getName() : null);
+        
+        return dto;
+    }
+
+    /**
+     * Maps Production entity to ProductionDetailDto with full product information
+     */
+    private BachDto.ProductionDetailDto mapProductionToDetailDto(Production production) {
+        BachDto.ProductionDetailDto dto = new BachDto.ProductionDetailDto();
+        
+        dto.setId(production.getId());
+        dto.setProductId(production.getProduct() != null ? production.getProduct().getId() : null);
+        dto.setProductName(production.getProduct() != null ? production.getProduct().getName() : null);
+        dto.setProductDescription(production.getProduct() != null ? production.getProduct().getDescription() : null);
+        dto.setProductMeasurement(production.getProduct() != null ? production.getProduct().getMeasurement() : null);
+        dto.setProductWeight(production.getProduct() != null ? production.getProduct().getWeight() : null);
+        dto.setProductPurchaseAmount(production.getProduct() != null ? production.getProduct().getPurchaseAmount() : null);
+        dto.setProductSaleAmount(production.getProduct() != null ? production.getProduct().getSaleAmount() : null);
+        dto.setProductRemainingQuantity(production.getProduct() != null ? production.getProduct().getRemainingQuantity() : null);
+        dto.setProductTaxPercentage(production.getProduct() != null ? production.getProduct().getTaxPercentage() : null);
+        dto.setProductStatus(production.getProduct() != null ? production.getProduct().getStatus() : null);
+        dto.setQuantity(production.getQuantity());
+        dto.setNumberOfRoll(production.getNumberOfRoll());
+        dto.setCategoryName(production.getProduct() != null && production.getProduct().getCategory() != null ? 
+            production.getProduct().getCategory().getName() : null);
+        
+        return dto;
     }
 }
 

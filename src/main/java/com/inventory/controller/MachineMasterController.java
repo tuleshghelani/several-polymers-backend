@@ -37,6 +37,11 @@ public class MachineMasterController {
     public ResponseEntity<?> details(@PathVariable Long id) {
         return ResponseEntity.ok(machineMasterService.getDetails(id));
     }
+
+    @GetMapping("/list")
+    public ResponseEntity<?> getMachineList() {
+        return ResponseEntity.ok(machineMasterService.getMachineList());
+    }
 }
 
 

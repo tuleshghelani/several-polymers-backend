@@ -14,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -124,6 +126,27 @@ public class MachineMasterService {
             throw e;
         } catch (Exception e) {
             throw new ValidationException("Failed to fetch machine details", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public ApiResponse<List<MachineDto>> getMachineList() {
+        try {
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            List<MachineMaster> machines = machineMasterRepository.findByClient_IdOrderByNameAsc(currentUser.getClient().getId());
+            
+            List<MachineDto> machineList = machines.stream()
+                .map(machine -> {
+                    MachineDto dto = new MachineDto();
+                    dto.setId(machine.getId());
+                    dto.setName(machine.getName());
+                    dto.setStatus(machine.getStatus());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+            
+            return ApiResponse.success("Machine list fetched successfully", machineList);
+        } catch (Exception e) {
+            throw new ValidationException("Failed to fetch machine list", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

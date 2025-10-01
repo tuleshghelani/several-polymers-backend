@@ -39,6 +39,11 @@ public class BachController {
         return ResponseEntity.ok(bachService.getDetails(id));
     }
 
+    @PostMapping("/full-details")
+    public ResponseEntity<?> fullDetails(@RequestBody BachDto request) {
+        return ResponseEntity.ok(bachService.getFullDetails(request));
+    }
+
     @PostMapping("/upsert")
     public ResponseEntity<?> upsert(@RequestBody BachUpsertRequestDto request) {
         return ResponseEntity.ok(bachService.upsert(request));
