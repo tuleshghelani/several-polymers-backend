@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ProductionRepository extends JpaRepository<Production, Long> {
     @Modifying
-    @Query(value = "DELETE FROM production WHERE bach_id = :batchId", nativeQuery = true)
+    @Query(value = "DELETE FROM production WHERE batch_id = :batchId", nativeQuery = true)
     void deleteByBatchId(@Param("batchId") Long batchId);
     
     List<Production> findByBatchId(Long batchId);

@@ -24,7 +24,7 @@ public class MixerDao {
 
         StringBuilder sql = new StringBuilder();
         sql.append("""
-            SELECT m.id, m.bach_id, m.product_id, m.quantity
+            SELECT m.id, m.batch_id, m.product_id, m.quantity
             FROM mixer m
             WHERE 1=1
         """);
@@ -59,7 +59,7 @@ public class MixerDao {
         sql.append(" AND m.client_id = :clientId");
         params.put("clientId", dto.getClientId());
         if (dto.getBatchId() != null) {
-            sql.append(" AND m.bach_id = :batchId");
+            sql.append(" AND m.batch_id = :batchId");
             params.put("batchId", dto.getBatchId());
         }
         if (dto.getProductId() != null) {

@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "mixer", indexes = {
-        @Index(name = "idx_mixer_batch_id", columnList = "bach_id"),
+        @Index(name = "idx_mixer_batch_id", columnList = "batch_id"),
         @Index(name = "idx_mixer_product_id", columnList = "product_id"),
         @Index(name = "idx_mixer_client_id", columnList = "client_id")
 })
@@ -22,7 +22,7 @@ public class Mixer {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bach_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_mixer_batch_id_batch_id"))
+    @JoinColumn(name = "batch_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_mixer_batch_id_batch_id"))
     private Batch batch;
 
     @ManyToOne(fetch = FetchType.LAZY)

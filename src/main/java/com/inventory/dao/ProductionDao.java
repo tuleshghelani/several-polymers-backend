@@ -24,7 +24,7 @@ public class ProductionDao {
 
         StringBuilder sql = new StringBuilder();
         sql.append("""
-            SELECT p.id, p.bach_id, p.product_id, p.quantity, p.number_of_roll
+            SELECT p.id, p.batch_id, p.product_id, p.quantity, p.number_of_roll
             FROM production p
             WHERE 1=1
         """);
@@ -60,7 +60,7 @@ public class ProductionDao {
         sql.append(" AND p.client_id = :clientId");
         params.put("clientId", dto.getClientId());
         if (dto.getBatchId() != null) {
-            sql.append(" AND p.bach_id = :batchId");
+            sql.append(" AND p.batch_id = :batchId");
             params.put("batchId", dto.getBatchId());
         }
         if (dto.getProductId() != null) {
