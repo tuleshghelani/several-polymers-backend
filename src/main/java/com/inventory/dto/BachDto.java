@@ -18,6 +18,7 @@ public class BachDto {
     private LocalDate date;
     private String shift;
     private String name;
+    private String operator;
     private BigDecimal resignBagUse;
     private BigDecimal resignBagOpeningStock;
     private BigDecimal cpwBagUse;
@@ -34,6 +35,8 @@ public class BachDto {
     private List<ProductionDetailDto> productionItems;
 
     private String search;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private Integer page = 0;
     private Integer size = 10;
     private String sortBy = "id";

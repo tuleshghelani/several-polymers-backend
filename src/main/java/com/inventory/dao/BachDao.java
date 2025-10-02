@@ -25,7 +25,7 @@ public class BachDao {
 
         StringBuilder sql = new StringBuilder();
         sql.append("""
-            SELECT b.id, b.date, b.shift, b.name, b.resign_bag_use, b.resign_bag_opening_stock,
+            SELECT b.id, b.date, b.shift, b.name, b.operator, b.resign_bag_use, b.resign_bag_opening_stock,
                    b.cpw_bag_use, b.cpw_bag_opening_stock, b.machine_id
             FROM batch b
             WHERE 1=1
@@ -49,11 +49,12 @@ public class BachDao {
             map.put("date", row[1]);
             map.put("shift", row[2]);
             map.put("name", row[3]);
-            map.put("resignBagUse", row[4]);
-            map.put("resignBagOpeningStock", row[5]);
-            map.put("cpwBagUse", row[6]);
-            map.put("cpwBagOpeningStock", row[7]);
-            map.put("machineId", row[8]);
+            map.put("operator", row[4]);
+            map.put("resignBagUse", row[5]);
+            map.put("resignBagOpeningStock", row[6]);
+            map.put("cpwBagUse", row[7]);
+            map.put("cpwBagOpeningStock", row[8]);
+            map.put("machineId", row[9]);
             content.add(map);
         }
         response.put("content", content);
@@ -69,6 +70,14 @@ public class BachDao {
         if (dto.getDate() != null) {
             sql.append(" AND b.date = :date");
             params.put("date", dto.getDate());
+        }
+        if (dto.getStartDate() != null) {
+            sql.append(" AND b.date >= :startDate");
+            params.put("startDate", dto.getStartDate());
+        }
+        if (dto.getEndDate() != null) {
+            sql.append(" AND b.date <= :endDate");
+            params.put("endDate", dto.getEndDate());
         }
         if (StringUtils.hasText(dto.getShift())) {
             sql.append(" AND b.shift = :shift");

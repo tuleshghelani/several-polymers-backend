@@ -17,6 +17,7 @@ public class BachUpsertRequestDto {
     private Long id; // edit time only, bach id
     private LocalDate date;
     private String shift; // varchar(2)
+    private String operator;
     private BigDecimal resignBagUse;
     private BigDecimal resignBagOpeningStock;
     private BigDecimal cpwBagUse;

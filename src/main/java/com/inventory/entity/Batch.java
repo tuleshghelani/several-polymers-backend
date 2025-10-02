@@ -40,6 +40,9 @@ public class Batch {
 
     @Column(name = "name", nullable = false, length = 32)
     private String name;
+    
+    @Column(name = "operator", columnDefinition = "text")
+    private String operator;
 
     @Column(name = "resign_bag_use", precision = 10, scale = 3, columnDefinition = "numeric(10,3)")
     private BigDecimal resignBagUse = BigDecimal.ZERO;

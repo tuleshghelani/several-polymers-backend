@@ -42,6 +42,7 @@ public class BachService {
             b.setDate(dto.getDate());
             b.setShift(dto.getShift().trim());
             b.setName(generateBachName(dto.getDate()));
+            b.setOperator(dto.getOperator());
             b.setResignBagUse(dto.getResignBagUse());
             b.setResignBagOpeningStock(dto.getResignBagOpeningStock());
             b.setCpwBagUse(dto.getCpwBagUse());
@@ -78,6 +79,7 @@ public class BachService {
             if (dto.getDate() != null) {
                 b.setName(generateBachName(dto.getDate()));
             }
+            if (StringUtils.hasText(dto.getOperator())) b.setOperator(dto.getOperator());
             if (dto.getResignBagUse() != null) b.setResignBagUse(dto.getResignBagUse());
             if (dto.getResignBagOpeningStock() != null) b.setResignBagOpeningStock(dto.getResignBagOpeningStock());
             if (dto.getCpwBagUse() != null) b.setCpwBagUse(dto.getCpwBagUse());
@@ -113,6 +115,11 @@ public class BachService {
             revertMixerQuantities(b.getId());
             revertProductionQuantities(b.getId());
             
+            // Delete related records first
+            mixerRepository.deleteByBatchId(b.getId());
+            productionRepository.deleteByBatchId(b.getId());
+            
+            // Then delete the batch record
             bachRepository.delete(b);
             return ApiResponse.success("Bach deleted successfully");
         } catch (ValidationException e) {
@@ -146,6 +153,7 @@ public class BachService {
             dto.setDate(b.getDate());
             dto.setShift(b.getShift());
             dto.setName(b.getName());
+            dto.setOperator(b.getOperator());
             dto.setResignBagUse(b.getResignBagUse());
             dto.setResignBagOpeningStock(b.getResignBagOpeningStock());
             dto.setCpwBagUse(b.getCpwBagUse());
@@ -179,6 +187,7 @@ public class BachService {
             response.setDate(b.getDate());
             response.setShift(b.getShift());
             response.setName(b.getName());
+            response.setOperator(b.getOperator());
             response.setResignBagUse(b.getResignBagUse());
             response.setResignBagOpeningStock(b.getResignBagOpeningStock());
             response.setCpwBagUse(b.getCpwBagUse());
@@ -272,6 +281,7 @@ public class BachService {
                 batch.setDate(req.getDate());
                 batch.setShift(req.getShift().trim());
                 batch.setName(generateBachName(req.getDate()));
+                batch.setOperator(req.getOperator());
                 batch.setResignBagUse(req.getResignBagUse());
                 batch.setResignBagOpeningStock(req.getResignBagOpeningStock());
                 batch.setCpwBagUse(req.getCpwBagUse());
@@ -287,6 +297,7 @@ public class BachService {
                 boolean dateChanged = req.getDate() != null && !req.getDate().equals(batch.getDate());
                 if (req.getDate() != null) batch.setDate(req.getDate());
                 if (StringUtils.hasText(req.getShift())) batch.setShift(req.getShift().trim());
+                if (StringUtils.hasText(req.getOperator())) batch.setOperator(req.getOperator());
                 if (req.getResignBagUse() != null) batch.setResignBagUse(req.getResignBagUse());
                 if (req.getResignBagOpeningStock() != null) batch.setResignBagOpeningStock(req.getResignBagOpeningStock());
                 if (req.getCpwBagUse() != null) batch.setCpwBagUse(req.getCpwBagUse());
@@ -429,17 +440,17 @@ public class BachService {
         dto.setId(mixer.getId());
         dto.setProductId(mixer.getProduct() != null ? mixer.getProduct().getId() : null);
         dto.setProductName(mixer.getProduct() != null ? mixer.getProduct().getName() : null);
-        dto.setProductDescription(mixer.getProduct() != null ? mixer.getProduct().getDescription() : null);
-        dto.setProductMeasurement(mixer.getProduct() != null ? mixer.getProduct().getMeasurement() : null);
-        dto.setProductWeight(mixer.getProduct() != null ? mixer.getProduct().getWeight() : null);
-        dto.setProductPurchaseAmount(mixer.getProduct() != null ? mixer.getProduct().getPurchaseAmount() : null);
-        dto.setProductSaleAmount(mixer.getProduct() != null ? mixer.getProduct().getSaleAmount() : null);
-        dto.setProductRemainingQuantity(mixer.getProduct() != null ? mixer.getProduct().getRemainingQuantity() : null);
-        dto.setProductTaxPercentage(mixer.getProduct() != null ? mixer.getProduct().getTaxPercentage() : null);
-        dto.setProductStatus(mixer.getProduct() != null ? mixer.getProduct().getStatus() : null);
+        // dto.setProductDescription(mixer.getProduct() != null ? mixer.getProduct().getDescription() : null);
+        // dto.setProductMeasurement(mixer.getProduct() != null ? mixer.getProduct().getMeasurement() : null);
+        // dto.setProductWeight(mixer.getProduct() != null ? mixer.getProduct().getWeight() : null);
+        // dto.setProductPurchaseAmount(mixer.getProduct() != null ? mixer.getProduct().getPurchaseAmount() : null);
+        // dto.setProductSaleAmount(mixer.getProduct() != null ? mixer.getProduct().getSaleAmount() : null);
+        // dto.setProductRemainingQuantity(mixer.getProduct() != null ? mixer.getProduct().getRemainingQuantity() : null);
+        // dto.setProductTaxPercentage(mixer.getProduct() != null ? mixer.getProduct().getTaxPercentage() : null);
+        // dto.setProductStatus(mixer.getProduct() != null ? mixer.getProduct().getStatus() : null);
         dto.setQuantity(mixer.getQuantity());
-        dto.setCategoryName(mixer.getProduct() != null && mixer.getProduct().getCategory() != null ? 
-            mixer.getProduct().getCategory().getName() : null);
+        // dto.setCategoryName(mixer.getProduct() != null && mixer.getProduct().getCategory() != null ? 
+        //     mixer.getProduct().getCategory().getName() : null);
         
         return dto;
     }
@@ -453,18 +464,18 @@ public class BachService {
         dto.setId(production.getId());
         dto.setProductId(production.getProduct() != null ? production.getProduct().getId() : null);
         dto.setProductName(production.getProduct() != null ? production.getProduct().getName() : null);
-        dto.setProductDescription(production.getProduct() != null ? production.getProduct().getDescription() : null);
-        dto.setProductMeasurement(production.getProduct() != null ? production.getProduct().getMeasurement() : null);
-        dto.setProductWeight(production.getProduct() != null ? production.getProduct().getWeight() : null);
-        dto.setProductPurchaseAmount(production.getProduct() != null ? production.getProduct().getPurchaseAmount() : null);
-        dto.setProductSaleAmount(production.getProduct() != null ? production.getProduct().getSaleAmount() : null);
-        dto.setProductRemainingQuantity(production.getProduct() != null ? production.getProduct().getRemainingQuantity() : null);
-        dto.setProductTaxPercentage(production.getProduct() != null ? production.getProduct().getTaxPercentage() : null);
-        dto.setProductStatus(production.getProduct() != null ? production.getProduct().getStatus() : null);
+        // dto.setProductDescription(production.getProduct() != null ? production.getProduct().getDescription() : null);
+        // dto.setProductMeasurement(production.getProduct() != null ? production.getProduct().getMeasurement() : null);
+        // dto.setProductWeight(production.getProduct() != null ? production.getProduct().getWeight() : null);
+        // dto.setProductPurchaseAmount(production.getProduct() != null ? production.getProduct().getPurchaseAmount() : null);
+        // dto.setProductSaleAmount(production.getProduct() != null ? production.getProduct().getSaleAmount() : null);
+        // dto.setProductRemainingQuantity(production.getProduct() != null ? production.getProduct().getRemainingQuantity() : null);
+        // dto.setProductTaxPercentage(production.getProduct() != null ? production.getProduct().getTaxPercentage() : null);
+        // dto.setProductStatus(production.getProduct() != null ? production.getProduct().getStatus() : null);
         dto.setQuantity(production.getQuantity());
         dto.setNumberOfRoll(production.getNumberOfRoll());
-        dto.setCategoryName(production.getProduct() != null && production.getProduct().getCategory() != null ? 
-            production.getProduct().getCategory().getName() : null);
+        // dto.setCategoryName(production.getProduct() != null && production.getProduct().getCategory() != null ? 
+        //     production.getProduct().getCategory().getName() : null);
         
         return dto;
     }
