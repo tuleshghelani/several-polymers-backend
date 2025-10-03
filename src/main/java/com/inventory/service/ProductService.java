@@ -66,6 +66,26 @@ public class ProductService {
         }
     }
 
+    public ApiResponse<Map<String, Object>> getRemainingQuantitiesForDefaultCodes() {
+        try {
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            List<String> codes = Arrays.asList("RESIGN", "CPW");
+            List<Product> products = productRepository.findByProductCodeInAndClient_Id(codes, currentUser.getClient().getId());
+
+            Map<String, Object> result = new HashMap<>();
+            for (String code : codes) {
+                result.put(code, 0);
+            }
+            for (Product p : products) {
+                result.put(p.getProductCode(), p.getRemainingQuantity());
+            }
+            return ApiResponse.success("Remaining quantities fetched", result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ValidationException("Failed to fetch remaining quantities");
+        }
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<?> update(Long id, ProductDto dto) {
         validateProduct(dto);

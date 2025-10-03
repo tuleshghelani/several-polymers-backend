@@ -3,9 +3,6 @@ package com.inventory.controller;
 import com.inventory.dto.ProductDto;
 import com.inventory.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +36,11 @@ public class ProductController {
     @PostMapping("/search")
     public ResponseEntity<?> searchProducts(@RequestBody ProductDto productDto) {
         return ResponseEntity.ok(productService.searchProducts(productDto));
+    }
+
+    @PostMapping("/remaining-quantities/codes")
+    public ResponseEntity<?> getRemainingQuantitiesForDefaultCodes(@RequestBody ProductDto productDto) {
+        return ResponseEntity.ok(productService.getRemainingQuantitiesForDefaultCodes());
     }
 
     /*@PostMapping("/export-pdf")

@@ -19,6 +19,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,9 +46,7 @@ public class BachService {
             b.setName(generateBachName(dto.getDate()));
             b.setOperator(dto.getOperator());
             b.setResignBagUse(dto.getResignBagUse());
-            b.setResignBagOpeningStock(dto.getResignBagOpeningStock());
             b.setCpwBagUse(dto.getCpwBagUse());
-            b.setCpwBagOpeningStock(dto.getCpwBagOpeningStock());
             MachineMaster m = machineMasterRepository.findById(dto.getMachineId())
                     .orElseThrow(() -> new ValidationException("Machine not found", HttpStatus.NOT_FOUND));
             if (!m.getClient().getId().equals(currentUser.getClient().getId())) {
@@ -55,7 +55,14 @@ public class BachService {
             b.setMachine(m);
             b.setCreatedBy(currentUser);
             b.setClient(currentUser.getClient());
+
+            Map<String, java.math.BigDecimal> stocks = getResignCpwStocks(currentUser.getClient().getId());
+            b.setResignBagOpeningStock(stocks.getOrDefault("RESIGN", java.math.BigDecimal.ZERO));
+            b.setCpwBagOpeningStock(stocks.getOrDefault("CPW", java.math.BigDecimal.ZERO));
             bachRepository.save(b);
+
+            // Adjust inventory for RESIGN and CPW bag uses (subtract use from stock)
+            adjustBagUseOnCreate(currentUser, b.getResignBagUse(), b.getCpwBagUse());
             return ApiResponse.success("Bach created successfully");
         } catch (ValidationException e) {
             throw e;
@@ -80,10 +87,13 @@ public class BachService {
                 b.setName(generateBachName(dto.getDate()));
             }
             if (StringUtils.hasText(dto.getOperator())) b.setOperator(dto.getOperator());
+            java.math.BigDecimal oldResignUse = b.getResignBagUse();
+            java.math.BigDecimal oldCpwUse = b.getCpwBagUse();
             if (dto.getResignBagUse() != null) b.setResignBagUse(dto.getResignBagUse());
-            if (dto.getResignBagOpeningStock() != null) b.setResignBagOpeningStock(dto.getResignBagOpeningStock());
             if (dto.getCpwBagUse() != null) b.setCpwBagUse(dto.getCpwBagUse());
-            if (dto.getCpwBagOpeningStock() != null) b.setCpwBagOpeningStock(dto.getCpwBagOpeningStock());
+            Map<String, java.math.BigDecimal> stocks = getResignCpwStocks(currentUser.getClient().getId());
+            b.setResignBagOpeningStock(stocks.getOrDefault("RESIGN", java.math.BigDecimal.ZERO));
+            b.setCpwBagOpeningStock(stocks.getOrDefault("CPW", java.math.BigDecimal.ZERO));
             if (dto.getMachineId() != null) {
                 MachineMaster m = machineMasterRepository.findById(dto.getMachineId())
                         .orElseThrow(() -> new ValidationException("Machine not found", HttpStatus.NOT_FOUND));
@@ -93,6 +103,9 @@ public class BachService {
                 b.setMachine(m);
             }
             bachRepository.save(b);
+
+            // If changed, add back old and subtract new
+            adjustBagUseOnUpdate(currentUser, oldResignUse, b.getResignBagUse(), oldCpwUse, b.getCpwBagUse());
             return ApiResponse.success("Bach updated successfully");
         } catch (ValidationException e) {
             throw e;
@@ -110,6 +123,9 @@ public class BachService {
             if (!b.getClient().getId().equals(currentUser.getClient().getId())) {
                 throw new ValidationException("Unauthorized", HttpStatus.FORBIDDEN);
             }
+            
+            // Revert RESIGN/CPW bag uses back to inventory
+            revertBagUseOnDelete(currentUser, b.getResignBagUse(), b.getCpwBagUse());
             
             // Revert quantities before deleting the bach
             revertMixerQuantities(b.getId());
@@ -283,11 +299,15 @@ public class BachService {
                 batch.setName(generateBachName(req.getDate()));
                 batch.setOperator(req.getOperator());
                 batch.setResignBagUse(req.getResignBagUse());
-                batch.setResignBagOpeningStock(req.getResignBagOpeningStock());
                 batch.setCpwBagUse(req.getCpwBagUse());
-                batch.setCpwBagOpeningStock(req.getCpwBagOpeningStock());
                 batch.setMachine(machine);
+                Map<String, java.math.BigDecimal> stocks = getResignCpwStocks(currentUser.getClient().getId());
+                batch.setResignBagOpeningStock(stocks.getOrDefault("RESIGN", java.math.BigDecimal.ZERO));
+                batch.setCpwBagOpeningStock(stocks.getOrDefault("CPW", java.math.BigDecimal.ZERO));
                 batch = bachRepository.save(batch);
+
+                // Adjust inventory on create path
+                adjustBagUseOnCreate(currentUser, batch.getResignBagUse(), batch.getCpwBagUse());
             } else {
                 batch = bachRepository.findById(req.getId())
                         .orElseThrow(() -> new ValidationException("Bach not found", HttpStatus.NOT_FOUND));
@@ -298,15 +318,21 @@ public class BachService {
                 if (req.getDate() != null) batch.setDate(req.getDate());
                 if (StringUtils.hasText(req.getShift())) batch.setShift(req.getShift().trim());
                 if (StringUtils.hasText(req.getOperator())) batch.setOperator(req.getOperator());
+                java.math.BigDecimal oldResignUse = batch.getResignBagUse();
+                java.math.BigDecimal oldCpwUse = batch.getCpwBagUse();
                 if (req.getResignBagUse() != null) batch.setResignBagUse(req.getResignBagUse());
-                if (req.getResignBagOpeningStock() != null) batch.setResignBagOpeningStock(req.getResignBagOpeningStock());
                 if (req.getCpwBagUse() != null) batch.setCpwBagUse(req.getCpwBagUse());
-                if (req.getCpwBagOpeningStock() != null) batch.setCpwBagOpeningStock(req.getCpwBagOpeningStock());
                 batch.setMachine(machine);
+                Map<String, java.math.BigDecimal> stocks = getResignCpwStocks(currentUser.getClient().getId());
+                batch.setResignBagOpeningStock(stocks.getOrDefault("RESIGN", java.math.BigDecimal.ZERO));
+                batch.setCpwBagOpeningStock(stocks.getOrDefault("CPW", java.math.BigDecimal.ZERO));
                 if (dateChanged) {
                     batch.setName(generateBachName(batch.getDate()));
                 }
                 batch = bachRepository.save(batch);
+
+                // Adjust inventory on update path
+                adjustBagUseOnUpdate(currentUser, oldResignUse, batch.getResignBagUse(), oldCpwUse, batch.getCpwBagUse());
             }
 
             // Handle mixer items with quantity updates
@@ -377,6 +403,105 @@ public class BachService {
         } catch (Exception e) {
             throw new ValidationException("Failed to upsert bach", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private Map<String, java.math.BigDecimal> getResignCpwStocks(Long clientId) {
+        try {
+            List<String> codes = Arrays.asList("RESIGN", "CPW");
+            List<Product> products = productRepository.findByProductCodeInAndClient_Id(codes, clientId);
+            Map<String, java.math.BigDecimal> result = new HashMap<>();
+            result.put("RESIGN", java.math.BigDecimal.ZERO);
+            result.put("CPW", java.math.BigDecimal.ZERO);
+            for (Product p : products) {
+                if (p.getProductCode() != null && p.getRemainingQuantity() != null) {
+                    result.put(p.getProductCode(), p.getRemainingQuantity());
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            Map<String, java.math.BigDecimal> fallback = new HashMap<>();
+            fallback.put("RESIGN", java.math.BigDecimal.ZERO);
+            fallback.put("CPW", java.math.BigDecimal.ZERO);
+            return fallback;
+        }
+    }
+
+    private void adjustBagUseOnCreate(UserMaster currentUser, java.math.BigDecimal resignUse, java.math.BigDecimal cpwUse) {
+        try {
+            if (resignUse != null && resignUse.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                productRepository.findByProductCodeInAndClient_Id(java.util.Arrays.asList("RESIGN"), currentUser.getClient().getId())
+                        .stream().findFirst().ifPresent(p -> {
+                            productQuantityService.updateProductQuantity(
+                                    p.getId(), resignUse, false, true, null
+                            );
+                        });
+            }
+            if (cpwUse != null && cpwUse.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                productRepository.findByProductCodeInAndClient_Id(java.util.Arrays.asList("CPW"), currentUser.getClient().getId())
+                        .stream().findFirst().ifPresent(p -> {
+                            productQuantityService.updateProductQuantity(
+                                    p.getId(), cpwUse, false, true, null
+                            );
+                        });
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void adjustBagUseOnUpdate(UserMaster currentUser, java.math.BigDecimal oldResignUse, java.math.BigDecimal newResignUse,
+                                      java.math.BigDecimal oldCpwUse, java.math.BigDecimal newCpwUse) {
+        try {
+            java.math.BigDecimal oldR = oldResignUse != null ? oldResignUse : java.math.BigDecimal.ZERO;
+            java.math.BigDecimal newR = newResignUse != null ? newResignUse : java.math.BigDecimal.ZERO;
+            if (oldR.compareTo(newR) != 0) {
+                productRepository.findByProductCodeInAndClient_Id(java.util.Arrays.asList("RESIGN"), currentUser.getClient().getId())
+                        .stream().findFirst().ifPresent(p -> {
+                            if (oldR.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                                productQuantityService.updateProductQuantity(p.getId(), oldR, true, false, null);
+                            }
+                            if (newR.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                                productQuantityService.updateProductQuantity(p.getId(), newR, false, true, null);
+                            }
+                        });
+            }
+
+            java.math.BigDecimal oldC = oldCpwUse != null ? oldCpwUse : java.math.BigDecimal.ZERO;
+            java.math.BigDecimal newC = newCpwUse != null ? newCpwUse : java.math.BigDecimal.ZERO;
+            if (oldC.compareTo(newC) != 0) {
+                productRepository.findByProductCodeInAndClient_Id(java.util.Arrays.asList("CPW"), currentUser.getClient().getId())
+                        .stream().findFirst().ifPresent(p -> {
+                            if (oldC.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                                productQuantityService.updateProductQuantity(p.getId(), oldC, true, false, null);
+                            }
+                            if (newC.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                                productQuantityService.updateProductQuantity(p.getId(), newC, false, true, null);
+                            }
+                        });
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Adds back RESIGN and CPW bag uses to inventory when a bach is deleted
+     */
+    private void revertBagUseOnDelete(UserMaster currentUser, java.math.BigDecimal resignUse, java.math.BigDecimal cpwUse) {
+        try {
+            if (resignUse != null && resignUse.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                productRepository.findByProductCodeInAndClient_Id(java.util.Arrays.asList("RESIGN"), currentUser.getClient().getId())
+                        .stream().findFirst().ifPresent(p -> {
+                            productQuantityService.updateProductQuantity(
+                                    p.getId(), resignUse, true, false, null
+                            );
+                        });
+            }
+            if (cpwUse != null && cpwUse.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                productRepository.findByProductCodeInAndClient_Id(java.util.Arrays.asList("CPW"), currentUser.getClient().getId())
+                        .stream().findFirst().ifPresent(p -> {
+                            productQuantityService.updateProductQuantity(
+                                    p.getId(), cpwUse, true, false, null
+                            );
+                        });
+            }
+        } catch (Exception ignored) {}
     }
 
     /**
