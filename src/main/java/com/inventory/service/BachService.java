@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -248,7 +249,36 @@ public class BachService {
             UserMaster currentUser = utilityService.getCurrentLoggedInUser();
             filter.setClientId(currentUser.getClient().getId());
 
-            List<Long> batchIds = bachDao.findBatchIdsForExport(filter);
+            // Fetch all batch data in a single query
+            List<Object[]> batchData = bachDao.findAllBatchesForExport(filter);
+            if (batchData.isEmpty()) {
+                throw new ValidationException("No batch data found for export", HttpStatus.NOT_FOUND);
+            }
+
+            // Extract batch IDs for subsequent queries
+            List<Long> batchIds = batchData.stream()
+                    .map(row -> ((Number) row[0]).longValue())
+                    .collect(Collectors.toList());
+
+            // Fetch all mixer and production data in single queries
+            List<Object[]> mixerData = bachDao.findAllMixersForExport(batchIds);
+            List<Object[]> productionData = bachDao.findAllProductionsForExport(batchIds);
+
+            // Create HashMaps for efficient data lookup
+            Map<Long, List<Object[]>> mixerMap = new HashMap<>();
+            Map<Long, List<Object[]>> productionMap = new HashMap<>();
+
+            // Group mixer data by batch ID
+            for (Object[] mixer : mixerData) {
+                Long batchId = ((Number) mixer[0]).longValue();
+                mixerMap.computeIfAbsent(batchId, k -> new ArrayList<>()).add(mixer);
+            }
+
+            // Group production data by batch ID
+            for (Object[] production : productionData) {
+                Long batchId = ((Number) production[0]).longValue();
+                productionMap.computeIfAbsent(batchId, k -> new ArrayList<>()).add(production);
+            }
 
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("Batch Report");
@@ -256,7 +286,7 @@ public class BachService {
             // Create header row
             Row headerRow = sheet.createRow(0);
             String[] headers = {
-                "Batch ID", "Date", "Shift", "Name", "Operator", "Machine", 
+                "Date", "Shift", "Name", "Operator", "Machine", 
                 "RESIGN Use", "RESIGN Opening", "CPW Use", "CPW Opening", 
                 "Mixer Details", "Production Details"
             };
@@ -268,6 +298,10 @@ public class BachService {
             headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             
+            // Create cell style for text wrapping
+            CellStyle wrapStyle = workbook.createCellStyle();
+            wrapStyle.setWrapText(true);
+            
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -275,85 +309,63 @@ public class BachService {
             }
 
             int rowNum = 1;
-            for (Long batchId : batchIds) {
-                Batch b = bachRepository.findById(batchId)
-                        .orElse(null);
-                if (b == null || !b.getClient().getId().equals(currentUser.getClient().getId())) continue;
-
-                // Load details
-                List<Mixer> mixers = mixerRepository.findByBatchId(batchId);
-                List<Production> productions = productionRepository.findByBatchId(batchId);
-
+            for (Object[] batch : batchData) {
+                Long batchId = ((Number) batch[0]).longValue();
+                
                 Row row = sheet.createRow(rowNum++);
                 
-                // Basic batch info
-                row.createCell(0).setCellValue(b.getId() != null ? b.getId().toString() : "");
-                row.createCell(1).setCellValue(b.getDate() != null ? b.getDate().toString() : "");
-                row.createCell(2).setCellValue(b.getShift() != null ? b.getShift() : "");
-                row.createCell(3).setCellValue(b.getName() != null ? b.getName() : "");
-                row.createCell(4).setCellValue(b.getOperator() != null ? b.getOperator() : "");
-                row.createCell(5).setCellValue(b.getMachine() != null ? b.getMachine().getName() : "");
-                row.createCell(6).setCellValue(b.getResignBagUse() != null ? b.getResignBagUse().toString() : "");
-                row.createCell(7).setCellValue(b.getResignBagOpeningStock() != null ? b.getResignBagOpeningStock().toString() : "");
-                row.createCell(8).setCellValue(b.getCpwBagUse() != null ? b.getCpwBagUse().toString() : "");
-                row.createCell(9).setCellValue(b.getCpwBagOpeningStock() != null ? b.getCpwBagOpeningStock().toString() : "");
+                // Basic batch info from single query result
+                row.createCell(0).setCellValue(batch[1] != null ? batch[1].toString() : "");
+                row.createCell(1).setCellValue(batch[2] != null ? batch[2].toString() : "");
+                row.createCell(2).setCellValue(batch[3] != null ? batch[3].toString() : "");
+                row.createCell(3).setCellValue(batch[4] != null ? batch[4].toString() : "");
+                row.createCell(4).setCellValue(batch[9] != null ? batch[9].toString() : ""); // machine_name
+                row.createCell(5).setCellValue(batch[5] != null ? batch[5].toString() : "");
+                row.createCell(6).setCellValue(batch[6] != null ? batch[6].toString() : "");
+                row.createCell(7).setCellValue(batch[7] != null ? batch[7].toString() : "");
+                row.createCell(8).setCellValue(batch[8] != null ? batch[8].toString() : "");
 
-                // Mixer details with all product information - each product on new line
+                // Mixer details - simplified format as requested
                 StringBuilder mixerDetails = new StringBuilder();
-                if (mixers.isEmpty()) {
+                List<Object[]> mixers = mixerMap.get(batchId);
+                if (mixers == null || mixers.isEmpty()) {
                     mixerDetails.append("No mixer items");
                 } else {
-                    for (int i = 0; i < mixers.size(); i++) {
-                        Mixer m = mixers.get(i);
-                        if (m.getProduct() != null) {
-                            mixerDetails.append("MIXER ITEM ").append(i + 1).append(":\n");
-                            mixerDetails.append("Product: ").append(m.getProduct().getName() != null ? m.getProduct().getName() : "").append("\n");
-                            mixerDetails.append("Description: ").append(m.getProduct().getDescription() != null ? m.getProduct().getDescription() : "").append("\n");
-                            mixerDetails.append("Measurement: ").append(m.getProduct().getMeasurement() != null ? m.getProduct().getMeasurement() : "").append("\n");
-                            mixerDetails.append("Weight: ").append(m.getProduct().getWeight() != null ? m.getProduct().getWeight().toString() : "").append("\n");
-                            mixerDetails.append("Purchase Amount: ").append(m.getProduct().getPurchaseAmount() != null ? m.getProduct().getPurchaseAmount().toString() : "").append("\n");
-                            mixerDetails.append("Sale Amount: ").append(m.getProduct().getSaleAmount() != null ? m.getProduct().getSaleAmount().toString() : "").append("\n");
-                            mixerDetails.append("Remaining Qty: ").append(m.getProduct().getRemainingQuantity() != null ? m.getProduct().getRemainingQuantity().toString() : "").append("\n");
-                            mixerDetails.append("Tax %: ").append(m.getProduct().getTaxPercentage() != null ? m.getProduct().getTaxPercentage().toString() : "").append("\n");
-                            mixerDetails.append("Status: ").append(m.getProduct().getStatus() != null ? m.getProduct().getStatus() : "").append("\n");
-                            mixerDetails.append("Category: ").append(m.getProduct().getCategory() != null ? m.getProduct().getCategory().getName() : "").append("\n");
-                            mixerDetails.append("Quantity Used: ").append(m.getQuantity() != null ? m.getQuantity().toString() : "").append("\n");
-                            if (i < mixers.size() - 1) {
-                                mixerDetails.append("\n=====================================\n");
-                            }
+                    for (Object[] mixer : mixers) {
+                        String productName = mixer[2] != null ? mixer[2].toString() : "";
+                        String quantity = mixer[1] != null ? mixer[1].toString() : "";
+                        mixerDetails.append(productName).append("(").append(quantity).append(")");
+                        if (mixers.indexOf(mixer) < mixers.size() - 1) {
+                            mixerDetails.append("\n");
                         }
                     }
                 }
-                row.createCell(10).setCellValue(mixerDetails.toString());
+                Cell mixerCell = row.createCell(9);
+                mixerCell.setCellValue(mixerDetails.toString());
+                mixerCell.setCellStyle(wrapStyle);
 
-                // Production details with all product information - each product on new line
+                // Production details - simplified format as requested
                 StringBuilder productionDetails = new StringBuilder();
-                if (productions.isEmpty()) {
+                List<Object[]> productions = productionMap.get(batchId);
+                if (productions == null || productions.isEmpty()) {
                     productionDetails.append("No production items");
                 } else {
-                    for (int i = 0; i < productions.size(); i++) {
-                        Production p = productions.get(i);
-                        if (p.getProduct() != null) {
-                            productionDetails.append("PRODUCTION ITEM ").append(i + 1).append(":\n");
-                            productionDetails.append("Product: ").append(p.getProduct().getName() != null ? p.getProduct().getName() : "").append("\n");
-                            productionDetails.append("Description: ").append(p.getProduct().getDescription() != null ? p.getProduct().getDescription() : "").append("\n");
-                            productionDetails.append("Measurement: ").append(p.getProduct().getMeasurement() != null ? p.getProduct().getMeasurement() : "").append("\n");
-                            productionDetails.append("Weight: ").append(p.getProduct().getWeight() != null ? p.getProduct().getWeight().toString() : "").append("\n");
-                            productionDetails.append("Purchase Amount: ").append(p.getProduct().getPurchaseAmount() != null ? p.getProduct().getPurchaseAmount().toString() : "").append("\n");
-                            productionDetails.append("Sale Amount: ").append(p.getProduct().getSaleAmount() != null ? p.getProduct().getSaleAmount().toString() : "").append("\n");
-                            productionDetails.append("Remaining Qty: ").append(p.getProduct().getRemainingQuantity() != null ? p.getProduct().getRemainingQuantity().toString() : "").append("\n");
-                            productionDetails.append("Tax %: ").append(p.getProduct().getTaxPercentage() != null ? p.getProduct().getTaxPercentage().toString() : "").append("\n");
-                            productionDetails.append("Status: ").append(p.getProduct().getStatus() != null ? p.getProduct().getStatus() : "").append("\n");
-                            productionDetails.append("Category: ").append(p.getProduct().getCategory() != null ? p.getProduct().getCategory().getName() : "").append("\n");
-                            productionDetails.append("Quantity Produced: ").append(p.getQuantity() != null ? p.getQuantity().toString() : "").append("\n");
-                            productionDetails.append("Number of Rolls: ").append(p.getNumberOfRoll() != null ? p.getNumberOfRoll().toString() : "").append("\n");
-                            if (i < productions.size() - 1) {
-                                productionDetails.append("\n=====================================\n");
-                            }
+                    for (Object[] production : productions) {
+                        String productName = production[3] != null ? production[3].toString() : "";
+                        String quantity = production[1] != null ? production[1].toString() : "";
+                        String numberOfRoll = production[2] != null ? production[2].toString() : "";
+                        productionDetails.append(productName).append("(").append(quantity).append(")").append(numberOfRoll);
+                        if (productions.indexOf(production) < productions.size() - 1) {
+                            productionDetails.append("\n");
                         }
                     }
                 }
-                row.createCell(11).setCellValue(productionDetails.toString());
+                Cell productionCell = row.createCell(10);
+                productionCell.setCellValue(productionDetails.toString());
+                productionCell.setCellStyle(wrapStyle);
+                
+                // Set minimum row height to accommodate wrapped text
+                row.setHeightInPoints(Math.max(row.getHeightInPoints(), 60));
             }
 
             // Auto-size columns

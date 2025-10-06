@@ -107,6 +107,74 @@ public class BachDao {
         }
         return result;
     }
+
+    /**
+     * Fetches all batch data for export in a single query with joins
+     * Returns batch data with machine information
+     */
+    public List<Object[]> findAllBatchesForExport(BachDto dto) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT b.id, b.date, b.shift, b.name, b.operator, b.resign_bag_use, ");
+        sql.append("b.resign_bag_opening_stock, b.cpw_bag_use, b.cpw_bag_opening_stock, ");
+        sql.append("m.name as machine_name ");
+        sql.append("FROM (select * from batch where 1=1 ");
+        Map<String, Object> params = new HashMap<>();
+        appendConditions(sql, params, dto);
+        sql.append(") b ");
+        sql.append("LEFT JOIN machine_master m ON b.machine_id = m.id ");
+        sql.append(" ORDER BY b." + dto.getSortBy() + " " + dto.getSortDir().toUpperCase());
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        params.forEach(query::setParameter);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> result = (List<Object[]>) query.getResultList();
+        return result;
+    }
+
+    /**
+     * Fetches all mixer data for given batch IDs in a single query with product information
+     */
+    public List<Object[]> findAllMixersForExport(List<Long> batchIds) {
+        if (batchIds == null || batchIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT m.batch_id, m.quantity, p.name as product_name ");
+        sql.append("FROM (select * from mixer where batch_id in (:batchIds)) m ");
+        sql.append("LEFT JOIN product p ON m.product_id = p.id ");
+        sql.append("ORDER BY m.batch_id, m.id ");
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        query.setParameter("batchIds", batchIds);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> result = (List<Object[]>) query.getResultList();
+        return result;
+    }
+
+    /**
+     * Fetches all production data for given batch IDs in a single query with product information
+     */
+    public List<Object[]> findAllProductionsForExport(List<Long> batchIds) {
+        if (batchIds == null || batchIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT p.batch_id, p.quantity, p.number_of_roll, pr.name as product_name ");
+        sql.append("FROM (select * from production where batch_id in (:batchIds)) p ");
+        sql.append("LEFT JOIN product pr ON p.product_id = pr.id ");
+        sql.append("ORDER BY p.batch_id, p.id ");
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        query.setParameter("batchIds", batchIds);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> result = (List<Object[]>) query.getResultList();
+        return result;
+    }
 }
 
 
