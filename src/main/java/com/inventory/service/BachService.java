@@ -22,6 +22,11 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
 @RequiredArgsConstructor
@@ -237,6 +242,137 @@ public class BachService {
             throw new ValidationException("Failed to fetch bach full details", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    public byte[] exportBachMixerProductionExcel(BachDto filter) {
+        try {
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            filter.setClientId(currentUser.getClient().getId());
+
+            List<Long> batchIds = bachDao.findBatchIdsForExport(filter);
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Batch Report");
+            
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {
+                "Batch ID", "Date", "Shift", "Name", "Operator", "Machine", 
+                "RESIGN Use", "RESIGN Opening", "CPW Use", "CPW Opening", 
+                "Mixer Details", "Production Details"
+            };
+            
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowNum = 1;
+            for (Long batchId : batchIds) {
+                Batch b = bachRepository.findById(batchId)
+                        .orElse(null);
+                if (b == null || !b.getClient().getId().equals(currentUser.getClient().getId())) continue;
+
+                // Load details
+                List<Mixer> mixers = mixerRepository.findByBatchId(batchId);
+                List<Production> productions = productionRepository.findByBatchId(batchId);
+
+                Row row = sheet.createRow(rowNum++);
+                
+                // Basic batch info
+                row.createCell(0).setCellValue(b.getId() != null ? b.getId().toString() : "");
+                row.createCell(1).setCellValue(b.getDate() != null ? b.getDate().toString() : "");
+                row.createCell(2).setCellValue(b.getShift() != null ? b.getShift() : "");
+                row.createCell(3).setCellValue(b.getName() != null ? b.getName() : "");
+                row.createCell(4).setCellValue(b.getOperator() != null ? b.getOperator() : "");
+                row.createCell(5).setCellValue(b.getMachine() != null ? b.getMachine().getName() : "");
+                row.createCell(6).setCellValue(b.getResignBagUse() != null ? b.getResignBagUse().toString() : "");
+                row.createCell(7).setCellValue(b.getResignBagOpeningStock() != null ? b.getResignBagOpeningStock().toString() : "");
+                row.createCell(8).setCellValue(b.getCpwBagUse() != null ? b.getCpwBagUse().toString() : "");
+                row.createCell(9).setCellValue(b.getCpwBagOpeningStock() != null ? b.getCpwBagOpeningStock().toString() : "");
+
+                // Mixer details with all product information - each product on new line
+                StringBuilder mixerDetails = new StringBuilder();
+                if (mixers.isEmpty()) {
+                    mixerDetails.append("No mixer items");
+                } else {
+                    for (int i = 0; i < mixers.size(); i++) {
+                        Mixer m = mixers.get(i);
+                        if (m.getProduct() != null) {
+                            mixerDetails.append("MIXER ITEM ").append(i + 1).append(":\n");
+                            mixerDetails.append("Product: ").append(m.getProduct().getName() != null ? m.getProduct().getName() : "").append("\n");
+                            mixerDetails.append("Description: ").append(m.getProduct().getDescription() != null ? m.getProduct().getDescription() : "").append("\n");
+                            mixerDetails.append("Measurement: ").append(m.getProduct().getMeasurement() != null ? m.getProduct().getMeasurement() : "").append("\n");
+                            mixerDetails.append("Weight: ").append(m.getProduct().getWeight() != null ? m.getProduct().getWeight().toString() : "").append("\n");
+                            mixerDetails.append("Purchase Amount: ").append(m.getProduct().getPurchaseAmount() != null ? m.getProduct().getPurchaseAmount().toString() : "").append("\n");
+                            mixerDetails.append("Sale Amount: ").append(m.getProduct().getSaleAmount() != null ? m.getProduct().getSaleAmount().toString() : "").append("\n");
+                            mixerDetails.append("Remaining Qty: ").append(m.getProduct().getRemainingQuantity() != null ? m.getProduct().getRemainingQuantity().toString() : "").append("\n");
+                            mixerDetails.append("Tax %: ").append(m.getProduct().getTaxPercentage() != null ? m.getProduct().getTaxPercentage().toString() : "").append("\n");
+                            mixerDetails.append("Status: ").append(m.getProduct().getStatus() != null ? m.getProduct().getStatus() : "").append("\n");
+                            mixerDetails.append("Category: ").append(m.getProduct().getCategory() != null ? m.getProduct().getCategory().getName() : "").append("\n");
+                            mixerDetails.append("Quantity Used: ").append(m.getQuantity() != null ? m.getQuantity().toString() : "").append("\n");
+                            if (i < mixers.size() - 1) {
+                                mixerDetails.append("\n=====================================\n");
+                            }
+                        }
+                    }
+                }
+                row.createCell(10).setCellValue(mixerDetails.toString());
+
+                // Production details with all product information - each product on new line
+                StringBuilder productionDetails = new StringBuilder();
+                if (productions.isEmpty()) {
+                    productionDetails.append("No production items");
+                } else {
+                    for (int i = 0; i < productions.size(); i++) {
+                        Production p = productions.get(i);
+                        if (p.getProduct() != null) {
+                            productionDetails.append("PRODUCTION ITEM ").append(i + 1).append(":\n");
+                            productionDetails.append("Product: ").append(p.getProduct().getName() != null ? p.getProduct().getName() : "").append("\n");
+                            productionDetails.append("Description: ").append(p.getProduct().getDescription() != null ? p.getProduct().getDescription() : "").append("\n");
+                            productionDetails.append("Measurement: ").append(p.getProduct().getMeasurement() != null ? p.getProduct().getMeasurement() : "").append("\n");
+                            productionDetails.append("Weight: ").append(p.getProduct().getWeight() != null ? p.getProduct().getWeight().toString() : "").append("\n");
+                            productionDetails.append("Purchase Amount: ").append(p.getProduct().getPurchaseAmount() != null ? p.getProduct().getPurchaseAmount().toString() : "").append("\n");
+                            productionDetails.append("Sale Amount: ").append(p.getProduct().getSaleAmount() != null ? p.getProduct().getSaleAmount().toString() : "").append("\n");
+                            productionDetails.append("Remaining Qty: ").append(p.getProduct().getRemainingQuantity() != null ? p.getProduct().getRemainingQuantity().toString() : "").append("\n");
+                            productionDetails.append("Tax %: ").append(p.getProduct().getTaxPercentage() != null ? p.getProduct().getTaxPercentage().toString() : "").append("\n");
+                            productionDetails.append("Status: ").append(p.getProduct().getStatus() != null ? p.getProduct().getStatus() : "").append("\n");
+                            productionDetails.append("Category: ").append(p.getProduct().getCategory() != null ? p.getProduct().getCategory().getName() : "").append("\n");
+                            productionDetails.append("Quantity Produced: ").append(p.getQuantity() != null ? p.getQuantity().toString() : "").append("\n");
+                            productionDetails.append("Number of Rolls: ").append(p.getNumberOfRoll() != null ? p.getNumberOfRoll().toString() : "").append("\n");
+                            if (i < productions.size() - 1) {
+                                productionDetails.append("\n=====================================\n");
+                            }
+                        }
+                    }
+                }
+                row.createCell(11).setCellValue(productionDetails.toString());
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new ValidationException("Failed to export bach report to Excel", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            throw new ValidationException("Failed to export bach report", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     private void validateCreate(BachDto dto) {
         if (dto == null || dto.getDate() == null || !StringUtils.hasText(dto.getShift()) || dto.getMachineId() == null) {

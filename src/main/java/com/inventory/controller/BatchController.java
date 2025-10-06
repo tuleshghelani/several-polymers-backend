@@ -3,6 +3,9 @@ package com.inventory.controller;
 import com.inventory.dto.BachDto;
 import com.inventory.service.BachService;
 import com.inventory.dto.request.BachUpsertRequestDto;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,6 +50,15 @@ public class BatchController {
     @PostMapping("/upsert")
     public ResponseEntity<?> upsert(@RequestBody BachUpsertRequestDto request) {
         return ResponseEntity.ok(bachService.upsert(request));
+    }
+
+    @PostMapping("/export")
+    public ResponseEntity<byte[]> export(@RequestBody BachDto request) {
+        byte[] excel = bachService.exportBachMixerProductionExcel(request);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=bach-report.xlsx");
+        return new ResponseEntity<>(excel, headers, HttpStatus.OK);
     }
 }
 

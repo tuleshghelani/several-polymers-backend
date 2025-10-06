@@ -88,6 +88,25 @@ public class BachDao {
             params.put("machineId", dto.getMachineId());
         }
     }
+
+    public List<Long> findBatchIdsForExport(BachDto dto) {
+        StringBuilder sql = new StringBuilder("SELECT b.id FROM batch b WHERE 1=1");
+        Map<String, Object> params = new HashMap<>();
+        appendConditions(sql, params, dto);
+        // Default ordering for export
+        sql.append(" ORDER BY b." + dto.getSortBy() + " " + dto.getSortDir().toUpperCase());
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        params.forEach(query::setParameter);
+
+        @SuppressWarnings("unchecked")
+        List<Number> ids = (List<Number>) query.getResultList();
+        List<Long> result = new ArrayList<>();
+        for (Number n : ids) {
+            if (n != null) result.add(n.longValue());
+        }
+        return result;
+    }
 }
 
 
