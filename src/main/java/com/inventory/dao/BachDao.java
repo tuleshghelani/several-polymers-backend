@@ -117,7 +117,7 @@ public class BachDao {
         sql.append("SELECT b.id, b.date, b.shift, b.name, b.operator, b.resign_bag_use, ");
         sql.append("b.resign_bag_opening_stock, b.cpw_bag_use, b.cpw_bag_opening_stock, ");
         sql.append("m.name as machine_name ");
-        sql.append("FROM (select * from batch where 1=1 ");
+        sql.append("FROM (select * from batch b where 1=1 ");
         Map<String, Object> params = new HashMap<>();
         appendConditions(sql, params, dto);
         sql.append(") b ");
