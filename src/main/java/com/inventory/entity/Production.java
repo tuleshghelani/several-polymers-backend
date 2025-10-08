@@ -35,6 +35,9 @@ public class Production {
     @Column(name = "number_of_roll")
     private Integer numberOfRoll;
 
+    @Column(name = "is_wastage", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isWastage = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_production_client_id_client_id"))
     private Client client;

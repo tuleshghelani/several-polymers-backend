@@ -351,10 +351,12 @@ public class BachService {
                     productionDetails.append("No production items");
                 } else {
                     for (Object[] production : productions) {
-                        String productName = production[3] != null ? production[3].toString() : "";
+                        String productName = production[4] != null ? production[4].toString() : "";
                         String quantity = production[1] != null ? production[1].toString() : "";
                         String numberOfRoll = production[2] != null ? production[2].toString() : "";
-                        productionDetails.append(productName).append("(").append(quantity).append(")").append(numberOfRoll);
+                        String isWastage = production[3] != null ? production[3].toString() : "";
+                        String wastageText = "true".equals(isWastage) ? " [WASTAGE]" : "";
+                        productionDetails.append(productName).append("(").append(quantity).append(")").append(numberOfRoll).append(wastageText);
                         if (productions.indexOf(production) < productions.size() - 1) {
                             productionDetails.append("\n");
                         }
@@ -532,6 +534,7 @@ public class BachService {
                     p.setProduct(product);
                     p.setQuantity(item.getQuantity());
                     p.setNumberOfRoll(item.getNumberOfRoll());
+                    p.setIsWastage(item.getIsWastage() != null ? item.getIsWastage() : false);
                     p.setClient(currentUser.getClient());
                     productionRepository.save(p);
                     
@@ -747,6 +750,7 @@ public class BachService {
         // dto.setProductStatus(production.getProduct() != null ? production.getProduct().getStatus() : null);
         dto.setQuantity(production.getQuantity());
         dto.setNumberOfRoll(production.getNumberOfRoll());
+        dto.setIsWastage(production.getIsWastage());
         // dto.setCategoryName(production.getProduct() != null && production.getProduct().getCategory() != null ? 
         //     production.getProduct().getCategory().getName() : null);
         

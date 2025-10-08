@@ -40,6 +40,7 @@ public class BachUpsertRequestDto {
         private Long productId;
         private BigDecimal quantity;
         private Integer numberOfRoll;
+        private Boolean isWastage;
     }
 }
 

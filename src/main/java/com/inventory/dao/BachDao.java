@@ -163,7 +163,7 @@ public class BachDao {
         }
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT p.batch_id, p.quantity, p.number_of_roll, pr.name as product_name ");
+        sql.append("SELECT p.batch_id, p.quantity, p.number_of_roll, p.is_wastage, pr.name as product_name ");
         sql.append("FROM (select * from production where batch_id in (:batchIds)) p ");
         sql.append("LEFT JOIN product pr ON p.product_id = pr.id ");
         sql.append("ORDER BY p.batch_id, p.id ");

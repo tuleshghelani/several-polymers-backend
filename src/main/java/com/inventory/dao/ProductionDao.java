@@ -24,7 +24,7 @@ public class ProductionDao {
 
         StringBuilder sql = new StringBuilder();
         sql.append("""
-            SELECT p.id, p.batch_id, p.product_id, p.quantity, p.number_of_roll
+            SELECT p.id, p.batch_id, p.product_id, p.quantity, p.number_of_roll, p.is_wastage
             FROM production p
             WHERE 1=1
         """);
@@ -48,6 +48,7 @@ public class ProductionDao {
             map.put("productId", row[2]);
             map.put("quantity", row[3]);
             map.put("numberOfRoll", row[4]);
+            map.put("isWastage", row[5]);
             content.add(map);
         }
         response.put("content", content);
@@ -66,6 +67,10 @@ public class ProductionDao {
         if (dto.getProductId() != null) {
             sql.append(" AND p.product_id = :productId");
             params.put("productId", dto.getProductId());
+        }
+        if (dto.getIsWastage() != null) {
+            sql.append(" AND p.is_wastage = :isWastage");
+            params.put("isWastage", dto.getIsWastage());
         }
     }
 }
