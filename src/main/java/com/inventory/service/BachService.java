@@ -308,6 +308,13 @@ public class BachService {
                 cell.setCellStyle(headerStyle);
             }
 
+            // Running totals for final summary row
+            java.math.BigDecimal totalResignUse = java.math.BigDecimal.ZERO;
+            java.math.BigDecimal totalCpwUse = java.math.BigDecimal.ZERO;
+            java.math.BigDecimal totalMixerQuantity = java.math.BigDecimal.ZERO;
+            java.math.BigDecimal totalProductionNonWastage = java.math.BigDecimal.ZERO;
+            java.math.BigDecimal totalProductionWastage = java.math.BigDecimal.ZERO;
+
             int rowNum = 1;
             for (Object[] batch : batchData) {
                 Long batchId = ((Number) batch[0]).longValue();
@@ -325,6 +332,14 @@ public class BachService {
                 row.createCell(7).setCellValue(batch[7] != null ? batch[7].toString() : "");
                 row.createCell(8).setCellValue(batch[8] != null ? batch[8].toString() : "");
 
+                // Accumulate RESIGN/CPW totals
+                if (batch[5] != null) {
+                    try { totalResignUse = totalResignUse.add(new java.math.BigDecimal(batch[5].toString())); } catch (Exception ignored) {}
+                }
+                if (batch[7] != null) {
+                    try { totalCpwUse = totalCpwUse.add(new java.math.BigDecimal(batch[7].toString())); } catch (Exception ignored) {}
+                }
+
                 // Mixer details - simplified format as requested
                 StringBuilder mixerDetails = new StringBuilder();
                 List<Object[]> mixers = mixerMap.get(batchId);
@@ -335,6 +350,10 @@ public class BachService {
                         String productName = mixer[2] != null ? mixer[2].toString() : "";
                         String quantity = mixer[1] != null ? mixer[1].toString() : "";
                         mixerDetails.append(productName).append("(").append(quantity).append(")");
+                        // Accumulate mixer quantity total
+                        if (mixer[1] != null) {
+                            try { totalMixerQuantity = totalMixerQuantity.add(new java.math.BigDecimal(mixer[1].toString())); } catch (Exception ignored) {}
+                        }
                         if (mixers.indexOf(mixer) < mixers.size() - 1) {
                             mixerDetails.append("\n");
                         }
@@ -357,6 +376,16 @@ public class BachService {
                         String isWastage = production[3] != null ? production[3].toString() : "";
                         String wastageText = "true".equals(isWastage) ? " [WASTAGE]" : "";
                         productionDetails.append(productName).append("(").append(quantity).append(")").append(numberOfRoll).append(wastageText);
+                        // Accumulate production totals by wastage flag
+                        java.math.BigDecimal q = java.math.BigDecimal.ZERO;
+                        try { if (production[1] != null) { q = new java.math.BigDecimal(production[1].toString()); } } catch (Exception ignored) {}
+                        boolean w = false;
+                        try { w = production[3] != null && Boolean.parseBoolean(production[3].toString()); } catch (Exception ignored) {}
+                        if (w) {
+                            totalProductionWastage = totalProductionWastage.add(q);
+                        } else {
+                            totalProductionNonWastage = totalProductionNonWastage.add(q);
+                        }
                         if (productions.indexOf(production) < productions.size() - 1) {
                             productionDetails.append("\n");
                         }
@@ -369,6 +398,31 @@ public class BachService {
                 // Set minimum row height to accommodate wrapped text
                 row.setHeightInPoints(Math.max(row.getHeightInPoints(), 60));
             }
+
+            // Append final totals row
+            Row totalsRow = sheet.createRow(rowNum++);
+            CellStyle totalStyle = workbook.createCellStyle();
+            Font totalFont = workbook.createFont();
+            totalFont.setBold(true);
+            totalStyle.setFont(totalFont);
+            Cell totalLabel = totalsRow.createCell(0);
+            totalLabel.setCellValue("TOTAL");
+            totalLabel.setCellStyle(totalStyle);
+            // Place totals in respective columns
+            Cell resignTotalCell = totalsRow.createCell(5);
+            resignTotalCell.setCellValue(totalResignUse.toPlainString());
+            resignTotalCell.setCellStyle(totalStyle);
+            Cell cpwTotalCell = totalsRow.createCell(7);
+            cpwTotalCell.setCellValue(totalCpwUse.toPlainString());
+            cpwTotalCell.setCellStyle(totalStyle);
+            Cell mixerTotalCell = totalsRow.createCell(9);
+            mixerTotalCell.setCellValue(totalMixerQuantity.toPlainString());
+            mixerTotalCell.setCellStyle(totalStyle);
+            Cell productionTotalsCell = totalsRow.createCell(10);
+            String productionTotalsText = "Non-wastage Total: " + totalProductionNonWastage.toPlainString() +
+                    "\nWastage Total: " + totalProductionWastage.toPlainString();
+            productionTotalsCell.setCellValue(productionTotalsText);
+            productionTotalsCell.setCellStyle(wrapStyle);
 
             // Auto-size columns
             for (int i = 0; i < headers.length; i++) {
