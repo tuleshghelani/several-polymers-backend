@@ -41,6 +41,10 @@ public class EnquiryMasterService {
             e.setAddress(StringUtils.hasText(dto.getAddress()) ? dto.getAddress().trim() : null);
             e.setDescription(StringUtils.hasText(dto.getDescription()) ? dto.getDescription().trim() : null);
             e.setStatus(StringUtils.hasText(dto.getStatus()) ? dto.getStatus().trim() : "A");
+            e.setType(StringUtils.hasText(dto.getType()) ? dto.getType().trim() : null);
+            e.setCompany(StringUtils.hasText(dto.getCompany()) ? dto.getCompany().trim() : null);
+            e.setCity(StringUtils.hasText(dto.getCity()) ? dto.getCity().trim() : null);
+            e.setState(StringUtils.hasText(dto.getState()) ? dto.getState().trim() : null);
             e.setClient(currentUser.getClient());
             e.setCreatedBy(currentUser);
 
@@ -75,6 +79,10 @@ public class EnquiryMasterService {
             e.setAddress(StringUtils.hasText(dto.getAddress()) ? dto.getAddress().trim() : null);
             e.setDescription(StringUtils.hasText(dto.getDescription()) ? dto.getDescription().trim() : null);
             e.setStatus(StringUtils.hasText(dto.getStatus()) ? dto.getStatus().trim() : "A");
+            e.setType(StringUtils.hasText(dto.getType()) ? dto.getType().trim() : null);
+            e.setCompany(StringUtils.hasText(dto.getCompany()) ? dto.getCompany().trim() : null);
+            e.setCity(StringUtils.hasText(dto.getCity()) ? dto.getCity().trim() : null);
+            e.setState(StringUtils.hasText(dto.getState()) ? dto.getState().trim() : null);
             e.setUpdatedBy(currentUser);
             e.setUpdatedAt(OffsetDateTime.now());
 
@@ -154,6 +162,10 @@ public class EnquiryMasterService {
             data.put("address", e.getAddress());
             data.put("description", e.getDescription());
             data.put("status", e.getStatus());
+            data.put("type", e.getType());
+            data.put("company", e.getCompany());
+            data.put("city", e.getCity());
+            data.put("state", e.getState());
             data.put("clientId", e.getClient() != null ? e.getClient().getId() : null);
             data.put("createdAt", e.getCreatedAt());
             data.put("updatedAt", e.getUpdatedAt());
@@ -181,8 +193,20 @@ public class EnquiryMasterService {
         if (StringUtils.hasText(dto.getMail()) && dto.getMail().trim().length() > 256) {
             throw new ValidationException("Email too long");
         }
-        if (StringUtils.hasText(dto.getStatus()) && dto.getStatus().trim().length() > 256) {
+        if (StringUtils.hasText(dto.getStatus()) && dto.getStatus().trim().length() > 4) {
             throw new ValidationException("Status too long");
+        }
+        if (StringUtils.hasText(dto.getType()) && dto.getType().trim().length() > 64) {
+            throw new ValidationException("Type too long");
+        }
+        if (StringUtils.hasText(dto.getCompany()) && dto.getCompany().trim().length() > 64) {
+            throw new ValidationException("Company name too long");
+        }
+        if (StringUtils.hasText(dto.getCity()) && dto.getCity().trim().length() > 64) {
+            throw new ValidationException("City name too long");
+        }
+        if (StringUtils.hasText(dto.getState()) && dto.getState().trim().length() > 16) {
+            throw new ValidationException("State name too long");
         }
     }
 }

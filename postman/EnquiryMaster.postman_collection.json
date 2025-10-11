@@ -39,7 +39,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"John Doe\",\n  \"mobile\": \"+1234567890\",\n  \"mail\": \"john.doe@example.com\",\n  \"subject\": \"Product Inquiry\",\n  \"address\": \"123 Main St, City, State\",\n  \"description\": \"Interested in your polymer products\",\n  \"status\": \"A\"\n}"
+          "raw": "{\n  \"name\": \"John Doe\",\n  \"mobile\": \"+1234567890\",\n  \"mail\": \"john.doe@example.com\",\n  \"subject\": \"Product Inquiry\",\n  \"address\": \"123 Main St, City, State\",\n  \"description\": \"Interested in your polymer products\",\n  \"status\": \"A\",\n  \"type\": \"Individual\",\n  \"company\": \"ABC Corporation\",\n  \"city\": \"New York\",\n  \"state\": \"NY\"\n}"
         }
       },
       "response": [
@@ -70,7 +70,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"id\": 1,\n  \"name\": \"John Doe Updated\",\n  \"mobile\": \"+1234567890\",\n  \"mail\": \"john.doe.updated@example.com\",\n  \"subject\": \"Updated Product Inquiry\",\n  \"address\": \"456 Updated St, City, State\",\n  \"description\": \"Updated interest in your polymer products\",\n  \"status\": \"A\"\n}"
+          "raw": "{\n  \"id\": 1,\n  \"name\": \"John Doe Updated\",\n  \"mobile\": \"+1234567890\",\n  \"mail\": \"john.doe.updated@example.com\",\n  \"subject\": \"Updated Product Inquiry\",\n  \"address\": \"456 Updated St, City, State\",\n  \"description\": \"Updated interest in your polymer products\",\n  \"status\": \"A\",\n  \"type\": \"Corporate\",\n  \"company\": \"XYZ Corporation\",\n  \"city\": \"Los Angeles\",\n  \"state\": \"CA\"\n}"
         }
       },
       "response": [
@@ -100,7 +100,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"mobile\": \"+1234567890\",\n  \"mail\": \"john.doe.updated@example.com\",\n  \"subject\": \"Updated Product Inquiry\",\n  \"address\": \"456 Updated St, City, State\",\n  \"description\": \"Updated interest in your polymer products\",\n  \"status\": \"A\"\n}"
+          "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"mobile\": \"+1234567890\",\n  \"mail\": \"john.doe.updated@example.com\",\n  \"subject\": \"Updated Product Inquiry\",\n  \"address\": \"456 Updated St, City, State\",\n  \"description\": \"Updated interest in your polymer products\",\n  \"status\": \"A\",\n  \"type\": \"Corporate\",\n  \"company\": \"XYZ Corporation\",\n  \"city\": \"Los Angeles\",\n  \"state\": \"CA\"\n}"
         }
       },
       "response": [
@@ -187,7 +187,7 @@
           "originalRequest": { "method": "POST", "url": { "raw": "{{baseURL}}/api/enquiries/getEnquiries" } },
           "status": "OK",
           "code": 200,
-          "body": "{\n  \"success\": true,\n  \"message\": \"Enquiries retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"John Doe\",\n      \"mobile\": \"+1234567890\",\n      \"mail\": \"john.doe@example.com\",\n      \"subject\": \"Product Inquiry\",\n      \"address\": \"123 Main St, City, State\",\n      \"description\": \"Interested in your polymer products\",\n      \"status\": \"A\"\n    }\n  ]\n}"
+          "body": "{\n  \"success\": true,\n  \"message\": \"Enquiries retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"John Doe\",\n      \"mobile\": \"+1234567890\",\n      \"mail\": \"john.doe@example.com\",\n      \"subject\": \"Product Inquiry\",\n      \"address\": \"123 Main St, City, State\",\n      \"description\": \"Interested in your polymer products\",\n      \"status\": \"A\",\n      \"type\": \"Individual\",\n      \"company\": \"ABC Corporation\",\n      \"city\": \"New York\",\n      \"state\": \"NY\"\n    }\n  ]\n}"
         }
       ]
     },
@@ -214,7 +214,7 @@
           "originalRequest": { "method": "POST", "url": { "raw": "{{baseURL}}/api/enquiries/search" } },
           "status": "OK",
           "code": 200,
-          "body": "{\n  \"success\": true,\n  \"message\": \"Enquiries retrieved successfully\",\n  \"data\": {\n    \"content\": [\n      { \n        \"id\": 1, \n        \"name\": \"John Doe\", \n        \"mobile\": \"+1234567890\",\n        \"mail\": \"john.doe@example.com\",\n        \"subject\": \"Product Inquiry\",\n        \"address\": \"123 Main St, City, State\",\n        \"description\": \"Interested in your polymer products\",\n        \"status\": \"A\"\n      }\n    ],\n    \"totalElements\": 1,\n    \"totalPages\": 1\n  }\n}"
+          "body": "{\n  \"success\": true,\n  \"message\": \"Enquiries retrieved successfully\",\n  \"data\": {\n    \"content\": [\n      { \n        \"id\": 1, \n        \"name\": \"John Doe\", \n        \"mobile\": \"+1234567890\",\n        \"mail\": \"john.doe@example.com\",\n        \"subject\": \"Product Inquiry\",\n        \"address\": \"123 Main St, City, State\",\n        \"description\": \"Interested in your polymer products\",\n        \"status\": \"A\",\n        \"type\": \"Individual\",\n        \"company\": \"ABC Corporation\",\n        \"city\": \"New York\",\n        \"state\": \"NY\"\n      }\n    ],\n    \"totalElements\": 1,\n    \"totalPages\": 1\n  }\n}"
         }
       ]
     },
@@ -241,7 +241,7 @@
           "originalRequest": { "method": "POST", "url": { "raw": "{{baseURL}}/api/enquiries/details" } },
           "status": "OK",
           "code": 200,
-          "body": "{\n  \"success\": true,\n  \"message\": \"Enquiry details retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"mobile\": \"+1234567890\",\n    \"mail\": \"john.doe@example.com\",\n    \"subject\": \"Product Inquiry\",\n    \"address\": \"123 Main St, City, State\",\n    \"description\": \"Interested in your polymer products\",\n    \"status\": \"A\",\n    \"clientId\": 10,\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": null,\n    \"createdById\": 1,\n    \"createdByName\": \"Admin User\",\n    \"updatedById\": null,\n    \"updatedByName\": null\n  }\n}"
+          "body": "{\n  \"success\": true,\n  \"message\": \"Enquiry details retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"mobile\": \"+1234567890\",\n    \"mail\": \"john.doe@example.com\",\n    \"subject\": \"Product Inquiry\",\n    \"address\": \"123 Main St, City, State\",\n    \"description\": \"Interested in your polymer products\",\n    \"status\": \"A\",\n    \"type\": \"Individual\",\n    \"company\": \"ABC Corporation\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"clientId\": 10,\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": null,\n    \"createdById\": 1,\n    \"createdByName\": \"Admin User\",\n    \"updatedById\": null,\n    \"updatedByName\": null\n  }\n}"
         }
       ]
     },
@@ -265,7 +265,7 @@
           "originalRequest": { "method": "GET", "url": { "raw": "{{baseURL}}/api/enquiries/1" } },
           "status": "OK",
           "code": 200,
-          "body": "{\n  \"success\": true,\n  \"message\": \"Enquiry details retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"mobile\": \"+1234567890\",\n    \"mail\": \"john.doe@example.com\",\n    \"subject\": \"Product Inquiry\",\n    \"address\": \"123 Main St, City, State\",\n    \"description\": \"Interested in your polymer products\",\n    \"status\": \"A\",\n    \"clientId\": 10,\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": null,\n    \"createdById\": 1,\n    \"createdByName\": \"Admin User\",\n    \"updatedById\": null,\n    \"updatedByName\": null\n  }\n}"
+          "body": "{\n  \"success\": true,\n  \"message\": \"Enquiry details retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"mobile\": \"+1234567890\",\n    \"mail\": \"john.doe@example.com\",\n    \"subject\": \"Product Inquiry\",\n    \"address\": \"123 Main St, City, State\",\n    \"description\": \"Interested in your polymer products\",\n    \"status\": \"A\",\n    \"type\": \"Individual\",\n    \"company\": \"ABC Corporation\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"clientId\": 10,\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": null,\n    \"createdById\": 1,\n    \"createdByName\": \"Admin User\",\n    \"updatedById\": null,\n    \"updatedByName\": null\n  }\n}"
         }
       ]
     }

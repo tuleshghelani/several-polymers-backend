@@ -30,13 +30,17 @@ public class EnquiryMasterDao {
                 e.subject,
                 e.address,
                 e.description,
-                e.status
+                e.status,
+                e.type,
+                e.company,
+                e.city,
+                e.state
             FROM enquiry_master e
             WHERE 1=1
         """);
 
         if (StringUtils.hasText(dto.getSearch())) {
-            sql.append(" AND (LOWER(e.name) LIKE LOWER(:search) OR LOWER(e.mobile) LIKE LOWER(:search) OR LOWER(e.mail) LIKE LOWER(:search) OR LOWER(e.subject) LIKE LOWER(:search))");
+            sql.append(" AND (LOWER(e.name) LIKE LOWER(:search) OR LOWER(e.mobile) LIKE LOWER(:search) OR LOWER(e.mail) LIKE LOWER(:search) OR LOWER(e.subject) LIKE LOWER(:search) OR LOWER(e.type) LIKE LOWER(:search) OR LOWER(e.company) LIKE LOWER(:search) OR LOWER(e.city) LIKE LOWER(:search) OR LOWER(e.state) LIKE LOWER(:search))");
             params.put("search", "%" + dto.getSearch().trim() + "%");
         }
 
@@ -53,7 +57,7 @@ public class EnquiryMasterDao {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Object[] row : results) {
             if (row[0] != null) {
-                Map<String, Object> map = new HashMap<>(8);
+                Map<String, Object> map = new HashMap<>(12);
                 map.put("id", row[0]);
                 map.put("name", row[1]);
                 map.put("mobile", row[2]);
@@ -62,6 +66,10 @@ public class EnquiryMasterDao {
                 map.put("address", row[5]);
                 map.put("description", row[6]);
                 map.put("status", row[7]);
+                map.put("type", row[8]);
+                map.put("company", row[9]);
+                map.put("city", row[10]);
+                map.put("state", row[11]);
                 rows.add(map);
             }
         }
@@ -97,7 +105,11 @@ public class EnquiryMasterDao {
                 e.subject,
                 e.address,
                 e.description,
-                e.status
+                e.status,
+                e.type,
+                e.company,
+                e.city,
+                e.state
             FROM enquiry_master e
             WHERE 1=1
         """);
@@ -121,7 +133,7 @@ public class EnquiryMasterDao {
         List<Map<String, Object>> content = new ArrayList<>();
         for (Object[] row : results) {
             if (row[0] != null) {
-                Map<String, Object> map = new HashMap<>(8);
+                Map<String, Object> map = new HashMap<>(12);
                 map.put("id", row[0]);
                 map.put("name", row[1]);
                 map.put("mobile", row[2]);
@@ -130,6 +142,10 @@ public class EnquiryMasterDao {
                 map.put("address", row[5]);
                 map.put("description", row[6]);
                 map.put("status", row[7]);
+                map.put("type", row[8]);
+                map.put("company", row[9]);
+                map.put("city", row[10]);
+                map.put("state", row[11]);
                 content.add(map);
             }
         }
@@ -141,7 +157,7 @@ public class EnquiryMasterDao {
 
     private void appendConditions(StringBuilder sql, Map<String, Object> params, EnquiryMasterDto dto) {
         if (StringUtils.hasText(dto.getSearch())) {
-            sql.append(" AND (LOWER(e.name) LIKE LOWER(:search) OR LOWER(e.mobile) LIKE LOWER(:search) OR LOWER(e.mail) LIKE LOWER(:search) OR LOWER(e.subject) LIKE LOWER(:search))");
+            sql.append(" AND (LOWER(e.name) LIKE LOWER(:search) OR LOWER(e.mobile) LIKE LOWER(:search) OR LOWER(e.mail) LIKE LOWER(:search) OR LOWER(e.subject) LIKE LOWER(:search) OR LOWER(e.type) LIKE LOWER(:search) OR LOWER(e.company) LIKE LOWER(:search) OR LOWER(e.city) LIKE LOWER(:search) OR LOWER(e.state) LIKE LOWER(:search))");
             params.put("search", "%" + dto.getSearch().trim() + "%");
         }
         sql.append(" AND e.client_id = :clientId");

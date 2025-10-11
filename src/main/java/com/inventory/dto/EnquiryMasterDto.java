@@ -18,6 +18,10 @@ public class EnquiryMasterDto {
     private String address;
     private String description;
     private String status;
+    private String type;
+    private String company;
+    private String city;
+    private String state;
     private Long clientId;
 
     private String search;

@@ -24,7 +24,7 @@ public class EnquiryMaster {
     @Column(name = "name", length = 256)
     private String name;
 
-    @Column(name = "mobile", length = 32)
+    @Column(name = "mobile", length = 16)
     private String mobile;
 
     @Column(name = "mail", length = 256)
@@ -41,6 +41,18 @@ public class EnquiryMaster {
 
     @Column(name = "status", length = 4)
     private String status;
+
+    @Column(name = "type", length = 64)
+    private String type;
+
+    @Column(name = "company", length = 64)
+    private String company;
+
+    @Column(name = "city", length = 64)
+    private String city;
+
+    @Column(name = "state", length = 16)
+    private String state;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", referencedColumnName = "id",
