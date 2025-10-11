@@ -1,0 +1,251 @@
+{
+	"info": {
+		"_postman_id": "follow-up-collection",
+		"name": "FollowUp",
+		"description": "Follow-up management API endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Follow-up",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"followUpStatus\": \"A\",\n    \"nextActionDate\": \"2024-12-31T10:00:00Z\",\n    \"description\": \"Follow up on quotation request\",\n    \"enquiryId\": 1,\n    \"clientId\": 1\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/create",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Follow-up",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1,\n    \"followUpStatus\": \"C\",\n    \"nextActionDate\": \"2024-12-31T14:00:00Z\",\n    \"description\": \"Updated follow up description\",\n    \"enquiryId\": 1,\n    \"clientId\": 1\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/update",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"update"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Follow-up by ID",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"followUpStatus\": \"C\",\n    \"nextActionDate\": \"2024-12-31T14:00:00Z\",\n    \"description\": \"Updated follow up description\",\n    \"enquiryId\": 1,\n    \"clientId\": 1\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Follow-up",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/delete",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"delete"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Follow-up by ID",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Follow-ups",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"page\": 0,\n    \"size\": 10,\n    \"sortBy\": \"id\",\n    \"sortDir\": \"desc\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/getFollowUps",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"getFollowUps"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Search Follow-ups",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"search\": \"quotation\",\n    \"page\": 0,\n    \"size\": 10,\n    \"sortBy\": \"nextActionDate\",\n    \"sortDir\": \"asc\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/search",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"search"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Follow-up Details",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/details",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"details"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Follow-up Details by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/follow-ups/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"follow-ups",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
