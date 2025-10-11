@@ -17,6 +17,7 @@ public class ProductionDto {
     private Long productId;
     private BigDecimal quantity;
     private Integer numberOfRoll;
+    private Boolean isWastage;
     private Long clientId;
 
     private Integer page = 0;

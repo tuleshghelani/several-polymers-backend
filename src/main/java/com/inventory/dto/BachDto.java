@@ -80,6 +80,7 @@ public class BachDto {
         private String productStatus;
         private BigDecimal quantity;
         private Integer numberOfRoll;
+        private Boolean isWastage;
         private String categoryName;
     }
 }

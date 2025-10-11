@@ -117,7 +117,7 @@ public class BachDao {
         sql.append("SELECT b.id, b.date, b.shift, b.name, b.operator, b.resign_bag_use, ");
         sql.append("b.resign_bag_opening_stock, b.cpw_bag_use, b.cpw_bag_opening_stock, ");
         sql.append("m.name as machine_name ");
-        sql.append("FROM (select * from batch where 1=1 ");
+        sql.append("FROM (select * from batch b where 1=1 ");
         Map<String, Object> params = new HashMap<>();
         appendConditions(sql, params, dto);
         sql.append(") b ");
@@ -163,7 +163,7 @@ public class BachDao {
         }
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT p.batch_id, p.quantity, p.number_of_roll, pr.name as product_name ");
+        sql.append("SELECT p.batch_id, p.quantity, p.number_of_roll, p.is_wastage, pr.name as product_name ");
         sql.append("FROM (select * from production where batch_id in (:batchIds)) p ");
         sql.append("LEFT JOIN product pr ON p.product_id = pr.id ");
         sql.append("ORDER BY p.batch_id, p.id ");

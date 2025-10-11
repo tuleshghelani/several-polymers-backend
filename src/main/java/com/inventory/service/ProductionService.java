@@ -45,6 +45,7 @@ public class ProductionService {
             p.setProduct(product);
             p.setQuantity(dto.getQuantity());
             p.setNumberOfRoll(dto.getNumberOfRoll());
+            p.setIsWastage(dto.getIsWastage() != null ? dto.getIsWastage() : false);
             p.setClient(currentUser.getClient());
             productionRepository.save(p);
             return ApiResponse.success("Production created successfully");
@@ -79,6 +80,7 @@ public class ProductionService {
             }
             if (dto.getQuantity() != null) p.setQuantity(dto.getQuantity());
             if (dto.getNumberOfRoll() != null) p.setNumberOfRoll(dto.getNumberOfRoll());
+            if (dto.getIsWastage() != null) p.setIsWastage(dto.getIsWastage());
             productionRepository.save(p);
             return ApiResponse.success("Production updated successfully");
         } catch (ValidationException e) {
@@ -131,6 +133,7 @@ public class ProductionService {
             dto.setProductId(p.getProduct() != null ? p.getProduct().getId() : null);
             dto.setQuantity(p.getQuantity());
             dto.setNumberOfRoll(p.getNumberOfRoll());
+            dto.setIsWastage(p.getIsWastage());
             return ApiResponse.success("Production details fetched", dto);
         } catch (ValidationException e) {
             throw e;
