@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface FollowUpRepository extends JpaRepository<FollowUp, Long> {
     List<FollowUp> findByEnquiry_IdAndClient_Id(Long enquiryId, Long clientId);
+    List<FollowUp> findByEnquiryIdAndClientIdOrderByIdDesc(Long enquiryId, Long clientId);
     List<FollowUp> findByClient_Id(Long clientId);
     Optional<FollowUp> findByIdAndClient_Id(Long id, Long clientId);
 }

@@ -4,9 +4,11 @@ import com.inventory.dao.EnquiryMasterDao;
 import com.inventory.dto.ApiResponse;
 import com.inventory.dto.EnquiryMasterDto;
 import com.inventory.entity.EnquiryMaster;
+import com.inventory.entity.FollowUp;
 import com.inventory.entity.UserMaster;
 import com.inventory.exception.ValidationException;
 import com.inventory.repository.EnquiryMasterRepository;
+import com.inventory.repository.FollowUpRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,7 @@ public class EnquiryMasterService {
     private final EnquiryMasterRepository enquiryMasterRepository;
     private final EnquiryMasterDao enquiryMasterDao;
     private final UtilityService utilityService;
+    private final FollowUpRepository followUpRepository;
     private final Logger logger = LoggerFactory.getLogger(EnquiryMasterService.class);
 
     @Transactional(rollbackFor = Exception.class)
@@ -153,7 +156,7 @@ public class EnquiryMasterService {
                 throw new ValidationException("You are not authorized to view this enquiry");
             }
 
-            Map<String, Object> data = new HashMap<>(15);
+            Map<String, Object> data = new HashMap<>(16);
             data.put("id", e.getId());
             data.put("name", e.getName());
             data.put("mobile", e.getMobile());
@@ -169,10 +172,15 @@ public class EnquiryMasterService {
             data.put("clientId", e.getClient() != null ? e.getClient().getId() : null);
             data.put("createdAt", e.getCreatedAt());
             data.put("updatedAt", e.getUpdatedAt());
-            data.put("createdById", e.getCreatedBy() != null ? e.getCreatedBy().getId() : null);
-            data.put("createdByName", e.getCreatedBy() != null ? e.getCreatedBy().getFirstName() + " " + e.getCreatedBy().getLastName() : null);
-            data.put("updatedById", e.getUpdatedBy() != null ? e.getUpdatedBy().getId() : null);
-            data.put("updatedByName", e.getUpdatedBy() != null ? e.getUpdatedBy().getFirstName() + " " + e.getUpdatedBy().getLastName() : null);
+            
+            // Get follow-up history and latest follow-up
+            List<Map<String, Object>> followUps = getFollowUpHistory(e.getId(), currentUser.getClient().getId());
+            data.put("followUps", followUps);
+            
+            // Add latest follow-up if available
+            if (!followUps.isEmpty()) {
+                data.put("latestFollowUp", followUps.get(0));
+            }
 
             return ApiResponse.success("Enquiry details retrieved successfully", data);
         } catch (ValidationException e) {
@@ -208,5 +216,29 @@ public class EnquiryMasterService {
         if (StringUtils.hasText(dto.getState()) && dto.getState().trim().length() > 16) {
             throw new ValidationException("State name too long");
         }
+    }
+    
+    /**
+     * Get follow-up history for an enquiry
+     * @param enquiryId The enquiry ID
+     * @param clientId The client ID
+     * @return List of follow-ups as maps
+     */
+    private List<Map<String, Object>> getFollowUpHistory(Long enquiryId, Long clientId) {
+        List<FollowUp> followUps = followUpRepository.findByEnquiryIdAndClientIdOrderByIdDesc(enquiryId, clientId);
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        for (FollowUp followUp : followUps) {
+            Map<String, Object> followUpMap = new HashMap<>();
+            followUpMap.put("id", followUp.getId());
+            followUpMap.put("followUpStatus", followUp.getFollowUpStatus());
+            followUpMap.put("nextActionDate", followUp.getNextActionDate());
+            followUpMap.put("description", followUp.getDescription());
+            followUpMap.put("enquiryId", followUp.getEnquiry() != null ? followUp.getEnquiry().getId() : null);
+            
+            result.add(followUpMap);
+        }
+        
+        return result;
     }
 }
