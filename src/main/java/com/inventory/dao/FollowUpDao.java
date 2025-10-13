@@ -95,8 +95,8 @@ public class FollowUpDao {
                 f.next_action_date,
                 f.description,
                 f.enquiry_id,
-                f.client_id,
-                e.name as enquiry_name
+                e.name as enquiry_name,
+                e.mobile 
             FROM follow_up f
             LEFT JOIN enquiry_master e ON f.enquiry_id = e.id
             WHERE 1=1
@@ -127,8 +127,8 @@ public class FollowUpDao {
                 map.put("nextActionDate", row[2]);
                 map.put("description", row[3]);
                 map.put("enquiryId", row[4]);
-                map.put("clientId", row[5]);
-                map.put("enquiryName", row[6]);
+                map.put("enquiryName", row[5]);
+                map.put("mobile", row[6]);
                 content.add(map);
             }
         }
