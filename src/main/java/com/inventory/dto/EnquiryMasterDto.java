@@ -1,5 +1,8 @@
 package com.inventory.dto;
 
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.Getter;
@@ -23,6 +26,10 @@ public class EnquiryMasterDto {
     private String city;
     private String state;
     private Long clientId;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
 
     private String search;
     private Integer page = 0;

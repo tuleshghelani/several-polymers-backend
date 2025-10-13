@@ -29,11 +29,9 @@ public class FollowUpDao {
                 f.description,
                 f.enquiry_id,
                 f.client_id,
-                e.name as enquiry_name,
-                c.name as client_name
+                e.name as enquiry_name
             FROM follow_up f
             LEFT JOIN enquiry_master e ON f.enquiry_id = e.id
-            LEFT JOIN client c ON f.client_id = c.id
             WHERE 1=1
         """);
 
@@ -63,7 +61,6 @@ public class FollowUpDao {
                 map.put("enquiryId", row[4]);
                 map.put("clientId", row[5]);
                 map.put("enquiryName", row[6]);
-                map.put("clientName", row[7]);
                 rows.add(map);
             }
         }

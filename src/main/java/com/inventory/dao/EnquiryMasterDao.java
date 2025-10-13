@@ -160,7 +160,38 @@ public class EnquiryMasterDao {
             sql.append(" AND (LOWER(e.name) LIKE LOWER(:search) OR LOWER(e.mobile) LIKE LOWER(:search) OR LOWER(e.mail) LIKE LOWER(:search) OR LOWER(e.subject) LIKE LOWER(:search) OR LOWER(e.type) LIKE LOWER(:search) OR LOWER(e.company) LIKE LOWER(:search) OR LOWER(e.city) LIKE LOWER(:search) OR LOWER(e.state) LIKE LOWER(:search))");
             params.put("search", "%" + dto.getSearch().trim() + "%");
         }
-        sql.append(" AND e.client_id = :clientId");
-        params.put("clientId", dto.getClientId());
+        if (dto.getClientId() != null) {
+            sql.append(" AND e.client_id = :clientId");
+            params.put("clientId", dto.getClientId());
+        }
+        if (dto.getStatus() != null) {
+            sql.append(" AND e.status = :status");
+            params.put("status", dto.getStatus().trim());
+        }
+        if (dto.getType() != null) {
+            sql.append(" AND e.type = :type");
+            params.put("type", dto.getType().trim());
+        }
+        if (dto.getCompany() != null) {
+            sql.append(" AND e.company = :company");
+            params.put("company", dto.getCompany().trim());
+        }
+        if (dto.getCity() != null) {
+            sql.append(" AND e.city = :city");
+            params.put("city", dto.getCity().trim());
+        }
+        if (dto.getState() != null) {
+            sql.append(" AND e.state = :state");
+            params.put("state", dto.getState().trim());
+        }
+
+        if(dto.getStartDate() != null) {
+            sql.append(" AND e.created_at >= :startDate");
+            params.put("startDate", dto.getStartDate());
+        }
+        if(dto.getEndDate() != null) {
+            sql.append(" AND e.created_at <= :endDate");
+            params.put("endDate", dto.getEndDate().atStartOfDay().plusDays(1));
+        }
     }
 }

@@ -206,6 +206,62 @@ public class FollowUpService {
             throw new ValidationException("Failed to retrieve follow-up details");
         }
     }
+    
+    /**
+     * Get all follow-ups for a specific enquiry ID
+     * @param enquiryId The enquiry ID
+     * @return ApiResponse containing all follow-ups and the latest follow-up separately
+     */
+    public ApiResponse<Map<String, Object>> getFollowUpsByEnquiryId(Long enquiryId) {
+        if (enquiryId == null) {
+            throw new ValidationException("Enquiry ID is required");
+        }
+        try {
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            
+            // Check if enquiry exists and user has access to it
+            EnquiryMaster enquiry = enquiryMasterRepository.findById(enquiryId)
+                    .orElseThrow(() -> new ValidationException("Enquiry not found"));
+                    
+            if (!Objects.equals(enquiry.getClient().getId(), currentUser.getClient().getId())) {
+                throw new ValidationException("You are not authorized to view follow-ups for this enquiry");
+            }
+            
+            // Get all follow-ups for this enquiry, ordered by ID descending (latest first)
+            List<FollowUp> followUps = followUpRepository.findByEnquiryIdAndClientIdOrderByIdDesc(enquiryId, currentUser.getClient().getId());
+            
+            // Convert to response format
+            List<Map<String, Object>> followUpsList = new ArrayList<>();
+            Map<String, Object> latestFollowUp = null;
+            
+            for (int i = 0; i < followUps.size(); i++) {
+                FollowUp f = followUps.get(i);
+                Map<String, Object> followUpMap = new HashMap<>(15);
+                followUpMap.put("id", f.getId());
+                followUpMap.put("followUpStatus", f.getFollowUpStatus());
+                followUpMap.put("nextActionDate", f.getNextActionDate());
+                followUpMap.put("description", f.getDescription());
+                followUpMap.put("createdAt", f.getCreatedAt());
+                followUpsList.add(followUpMap);
+                
+                // Store the latest follow-up (first in the list)
+                if (i == 0) {
+                    latestFollowUp = followUpMap;
+                }
+            }
+            
+            Map<String, Object> response = new HashMap<>(2);
+            response.put("followUps", followUpsList);
+            response.put("latestFollowUp", latestFollowUp);
+            
+            return ApiResponse.success("Follow-ups retrieved successfully", response);
+        } catch (ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to retrieve follow-ups for enquiry {}: {}", enquiryId, e.getMessage());
+            throw new ValidationException("Failed to retrieve follow-ups");
+        }
+    }
 
     private void validate(FollowUpDto dto) {
         if (dto.getNextActionDate() == null) {

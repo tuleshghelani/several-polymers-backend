@@ -108,8 +108,12 @@ public class EnquiryMasterService {
                 throw new ValidationException("You are not authorized to delete this enquiry", HttpStatus.UNPROCESSABLE_ENTITY);
             }
             try {
+                // First delete all associated follow-ups
+                deleteFollowUpsForEnquiry(id, currentUser.getClient().getId());
+                
+                // Then delete the enquiry
                 enquiryMasterRepository.delete(e);
-                return ApiResponse.success("Enquiry deleted successfully");
+                return ApiResponse.success("Enquiry and associated follow-ups deleted successfully");
             } catch (DataIntegrityViolationException ex) {
                 throw new ValidationException("Cannot delete enquiry. It is referenced by other records.", HttpStatus.UNPROCESSABLE_ENTITY);
             }
@@ -174,13 +178,13 @@ public class EnquiryMasterService {
             data.put("updatedAt", e.getUpdatedAt());
             
             // Get follow-up history and latest follow-up
-            List<Map<String, Object>> followUps = getFollowUpHistory(e.getId(), currentUser.getClient().getId());
+            /*List<Map<String, Object>> followUps = getFollowUpHistory(e.getId(), currentUser.getClient().getId());
             data.put("followUps", followUps);
             
             // Add latest follow-up if available
             if (!followUps.isEmpty()) {
                 data.put("latestFollowUp", followUps.get(0));
-            }
+            }*/
 
             return ApiResponse.success("Enquiry details retrieved successfully", data);
         } catch (ValidationException e) {
@@ -240,5 +244,26 @@ public class EnquiryMasterService {
         }
         
         return result;
+    }
+    
+    /**
+     * Deletes all follow-ups associated with a specific enquiry
+     * @param enquiryId The enquiry ID
+     * @param clientId The client ID
+     */
+    private void deleteFollowUpsForEnquiry(Long enquiryId, Long clientId) {
+        try {
+            // Get all follow-ups for this enquiry
+            List<FollowUp> followUps = followUpRepository.findByEnquiry_IdAndClient_Id(enquiryId, clientId);
+            
+            if (!followUps.isEmpty()) {
+                // Delete all follow-ups
+                followUpRepository.deleteAll(followUps);
+                logger.info("Deleted {} follow-ups for enquiry {}", followUps.size(), enquiryId);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to delete follow-ups for enquiry {}: {}", enquiryId, e.getMessage());
+            throw new ValidationException("Failed to delete associated follow-ups", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
     }
 }

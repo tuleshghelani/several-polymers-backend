@@ -12,6 +12,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class FollowUpController {
     private final FollowUpService followUpService;
+    
+    @PostMapping("/by-enquiry")
+    public ResponseEntity<?> getFollowUpsByEnquiryIdPost(@RequestBody FollowUpDto request) {
+        return ResponseEntity.ok(followUpService.getFollowUpsByEnquiryId(request.getEnquiryId()));
+    }
 
     @PostMapping("/create")
     public ResponseEntity<?> create(@RequestBody FollowUpDto request) {
