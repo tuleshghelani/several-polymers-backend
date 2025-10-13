@@ -1,10 +1,12 @@
 package com.inventory.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Data
@@ -18,6 +20,10 @@ public class FollowUpDto {
     private String description;
     private Long enquiryId;
     private Long clientId;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startDate;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
 
     private String search;
     private Integer page = 0;

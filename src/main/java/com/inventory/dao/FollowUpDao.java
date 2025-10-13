@@ -78,7 +78,6 @@ public class FollowUpDao {
             SELECT COUNT(f.id)
             FROM follow_up f
             LEFT JOIN enquiry_master e ON f.enquiry_id = e.id
-            LEFT JOIN client c ON f.client_id = c.id
             WHERE 1=1
         """);
 
@@ -97,11 +96,9 @@ public class FollowUpDao {
                 f.description,
                 f.enquiry_id,
                 f.client_id,
-                e.name as enquiry_name,
-                c.name as client_name
+                e.name as enquiry_name
             FROM follow_up f
             LEFT JOIN enquiry_master e ON f.enquiry_id = e.id
-            LEFT JOIN client c ON f.client_id = c.id
             WHERE 1=1
         """);
 
@@ -132,7 +129,6 @@ public class FollowUpDao {
                 map.put("enquiryId", row[4]);
                 map.put("clientId", row[5]);
                 map.put("enquiryName", row[6]);
-                map.put("clientName", row[7]);
                 content.add(map);
             }
         }
@@ -147,7 +143,25 @@ public class FollowUpDao {
             sql.append(" AND (LOWER(f.description) LIKE LOWER(:search) OR LOWER(f.follow_up_status) LIKE LOWER(:search) OR LOWER(e.name) LIKE LOWER(:search))");
             params.put("search", "%" + dto.getSearch().trim() + "%");
         }
-        sql.append(" AND f.client_id = :clientId");
-        params.put("clientId", dto.getClientId());
+        if (dto.getEnquiryId() != null) {
+            sql.append(" AND f.enquiry_id = :enquiryId");
+            params.put("enquiryId", dto.getEnquiryId());
+        }
+        if (dto.getClientId() != null) {
+            sql.append(" AND f.client_id = :clientId");
+            params.put("clientId", dto.getClientId());
+        }
+        if (dto.getFollowUpStatus() != null) {
+            sql.append(" AND f.follow_up_status = :followUpStatus");
+            params.put("followUpStatus", dto.getFollowUpStatus());
+        }
+        if (dto.getStartDate() != null) {
+            sql.append(" AND f.next_action_date >= :startDate");
+            params.put("startDate", dto.getStartDate().atStartOfDay());
+        }
+        if (dto.getEndDate() != null) {
+            sql.append(" AND f.next_action_date <= :endDate");
+            params.put("endDate", dto.getEndDate().atStartOfDay().plusDays(1));
+        }
     }
 }
