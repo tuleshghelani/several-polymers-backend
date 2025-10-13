@@ -81,7 +81,8 @@ public class EnquiryMasterService {
             e.setSubject(StringUtils.hasText(dto.getSubject()) ? dto.getSubject().trim() : null);
             e.setAddress(StringUtils.hasText(dto.getAddress()) ? dto.getAddress().trim() : null);
             e.setDescription(StringUtils.hasText(dto.getDescription()) ? dto.getDescription().trim() : null);
-            e.setStatus(StringUtils.hasText(dto.getStatus()) ? dto.getStatus().trim() : "A");
+            String newStatus = StringUtils.hasText(dto.getStatus()) ? dto.getStatus().trim() : "P";
+            e.setStatus(newStatus);
             e.setType(StringUtils.hasText(dto.getType()) ? dto.getType().trim() : null);
             e.setCompany(StringUtils.hasText(dto.getCompany()) ? dto.getCompany().trim() : null);
             e.setCity(StringUtils.hasText(dto.getCity()) ? dto.getCity().trim() : null);
@@ -90,6 +91,11 @@ public class EnquiryMasterService {
             e.setUpdatedAt(OffsetDateTime.now());
 
             enquiryMasterRepository.save(e);
+            
+            // When status is updated to 'W' (Won) or 'L' (Lost), update all follow-ups to 'C' (Completed)
+            if ("W".equals(newStatus) || "L".equals(newStatus)) {
+                updateAllFollowUpsToCompleted(e.getId(), currentUser.getClient().getId());
+            }
             return ApiResponse.success("Enquiry updated successfully");
         } catch (ValidationException e) {
             throw e;
@@ -264,6 +270,35 @@ public class EnquiryMasterService {
         } catch (Exception e) {
             logger.error("Failed to delete follow-ups for enquiry {}: {}", enquiryId, e.getMessage());
             throw new ValidationException("Failed to delete associated follow-ups", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+    }
+    
+    /**
+     * Updates all follow-ups for an enquiry to 'C' (Completed) status
+     * This is called when an enquiry is marked as Won ('W') or Lost ('L')
+     * 
+     * @param enquiryId The enquiry ID
+     * @param clientId The client ID
+     */
+    private void updateAllFollowUpsToCompleted(Long enquiryId, Long clientId) {
+        try {
+            // Get all follow-ups for this enquiry
+            List<FollowUp> followUps = followUpRepository.findByEnquiry_IdAndClient_Id(enquiryId, clientId);
+            
+            if (!followUps.isEmpty()) {
+                // Update all follow-ups to 'C' status
+                for (FollowUp followUp : followUps) {
+                    if (!"C".equals(followUp.getFollowUpStatus())) {
+                        followUp.setFollowUpStatus("C");
+                        followUp.setUpdatedAt(OffsetDateTime.now());
+                        followUpRepository.save(followUp);
+                    }
+                }
+                logger.info("Updated {} follow-ups to Completed status for enquiry {}", followUps.size(), enquiryId);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to update follow-ups to Completed for enquiry {}: {}", enquiryId, e.getMessage());
+            // Don't throw exception here to avoid breaking the main operation
         }
     }
 }
