@@ -63,6 +63,10 @@ public class FollowUpService {
             f.setCreatedBy(currentUser);
 
             followUpRepository.save(f);
+            
+            // Update status logic: Only latest follow-up should have 'S' status, others should be 'C'
+            updateFollowUpStatusesForEnquiry(dto.getEnquiryId(), currentUser.getClient().getId());
+            
             return ApiResponse.success("Follow-up created successfully");
         } catch (ValidationException e) {
             throw e;
@@ -108,6 +112,10 @@ public class FollowUpService {
             f.setUpdatedAt(OffsetDateTime.now());
 
             followUpRepository.save(f);
+            
+            // Update status logic: Only latest follow-up should have 'S' status, others should be 'C'
+            updateFollowUpStatusesForEnquiry(f.getEnquiry().getId(), currentUser.getClient().getId());
+            
             return ApiResponse.success("Follow-up updated successfully");
         } catch (ValidationException e) {
             throw e;
@@ -208,6 +216,44 @@ public class FollowUpService {
         }
         if (StringUtils.hasText(dto.getFollowUpStatus()) && dto.getFollowUpStatus().trim().length() > 4) {
             throw new ValidationException("Follow-up status too long");
+        }
+    }
+
+    /**
+     * Updates follow-up statuses for a specific enquiry.
+     * Only the latest follow-up should have status 'S', all others should be 'C'.
+     * This ensures only one active follow-up per enquiry.
+     */
+    private void updateFollowUpStatusesForEnquiry(Long enquiryId, Long clientId) {
+        try {
+            // Get all follow-ups for this enquiry, ordered by ID descending (latest first)
+            List<FollowUp> followUps = followUpRepository.findByEnquiryIdAndClientIdOrderByIdDesc(enquiryId, clientId);
+            
+            if (followUps.isEmpty()) {
+                return;
+            }
+            
+            // Update all follow-ups to 'C' status first
+            for (FollowUp followUp : followUps) {
+                if (!"C".equals(followUp.getFollowUpStatus())) {
+                    followUp.setFollowUpStatus("C");
+                    followUp.setUpdatedAt(OffsetDateTime.now());
+                    followUpRepository.save(followUp);
+                }
+            }
+            
+            // Set the latest (first in the list) follow-up to 'S' status
+            FollowUp latestFollowUp = followUps.get(0);
+            if (!"S".equals(latestFollowUp.getFollowUpStatus())) {
+                latestFollowUp.setFollowUpStatus("S");
+                latestFollowUp.setUpdatedAt(OffsetDateTime.now());
+                followUpRepository.save(latestFollowUp);
+            }
+            
+            logger.info("Updated follow-up statuses for enquiry {}: {} follow-ups processed", enquiryId, followUps.size());
+        } catch (Exception e) {
+            logger.error("Failed to update follow-up statuses for enquiry {}: {}", enquiryId, e.getMessage());
+            // Don't throw exception here to avoid breaking the main operation
         }
     }
 }
