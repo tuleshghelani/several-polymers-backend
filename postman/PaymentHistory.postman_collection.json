@@ -129,7 +129,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"search\": \"john\",\n  \"currentPage\": 0,\n  \"perPageRecord\": 10,\n  \"clientId\": 1,\n  \"startDate\": \"01-01-2025 00:00:00\",\n  \"endDate\": \"31-12-2025 23:59:59\"\n}"
+          "raw": "{\n  \"search\": \"john\",\n  \"currentPage\": 0,\n  \"perPageRecord\": 10,\n  \"clientId\": 1,\n  \"startDate\": \"01-01-2025\",\n  \"endDate\": \"31-12-2025\"\n}"
         }
       }
     },

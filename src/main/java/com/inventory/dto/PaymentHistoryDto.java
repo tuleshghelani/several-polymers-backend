@@ -49,11 +49,11 @@ public class PaymentHistoryDto {
     private Integer perPageRecord = 10;
     private Long clientId;
     
-    @JsonDeserialize(using = CustomDateDeserializer.class)
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss", timezone = "IST")
-    private OffsetDateTime startDate;
+    @JsonDeserialize(using = CustomLocalDateDeserializer.class)
+    @JsonFormat(pattern = "dd-MM-yyyy", timezone = "IST")
+    private LocalDate startDate;
     
-    @JsonDeserialize(using = CustomDateDeserializer.class)
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss", timezone = "IST")
-    private OffsetDateTime endDate;
+    @JsonDeserialize(using = CustomLocalDateDeserializer.class)
+    @JsonFormat(pattern = "dd-MM-yyyy", timezone = "IST")
+    private LocalDate endDate;
 }

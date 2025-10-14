@@ -142,10 +142,10 @@ public class PaymentHistoryService {
             // Revert the payment effect on customer using the dedicated service
             if (Boolean.TRUE.equals(paymentHistory.getIsReceived())) {
                 customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
-                    paymentHistory.getCustomer().getId(), paymentHistory.getAmount(), true, false);
+                    paymentHistory.getCustomer().getId(), paymentHistory.getAmount(), false, true);
             } else {
                 customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(
-                    paymentHistory.getCustomer().getId(), paymentHistory.getAmount(), false, true);
+                    paymentHistory.getCustomer().getId(), paymentHistory.getAmount(), true, false);
             }
             
             paymentHistoryRepository.delete(paymentHistory);
@@ -255,10 +255,10 @@ public class PaymentHistoryService {
         
         if (Boolean.TRUE.equals(isReceived)) {
             // Payment received from customer, this is like a "sale" where customer pays us
-            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(customerId, amount, false, true);
+            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(customerId, amount, true, false);
         } else {
             // Payment made to customer, this is like a "purchase" where we pay the customer
-            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(customerId, amount, true, false);
+            customerRemainingPaymentAmountService.updateCustomerRemainingPaymentAmount(customerId, amount, false, true);
         }
     }
 }

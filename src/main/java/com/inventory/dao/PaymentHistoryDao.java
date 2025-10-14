@@ -30,17 +30,17 @@ public class PaymentHistoryDao {
         }
 
         if (StringUtils.hasText(dto.getSearch())) {
-            countSql.append(" AND (LOWER(c.name) LIKE LOWER(:search) OR ph.remarks LIKE :search)");
+            countSql.append(" AND (ph.remarks LIKE :search)");
             params.put("search", "%" + dto.getSearch().trim() + "%");
         }
         
         if (dto.getStartDate() != null) {
-            countSql.append(" AND ph.created_at >= :startDate");
+            countSql.append(" AND ph.date >= :startDate");
             params.put("startDate", dto.getStartDate());
         }
         
         if (dto.getEndDate() != null) {
-            countSql.append(" AND ph.created_at <= :endDate");
+            countSql.append(" AND ph.date <= :endDate");
             params.put("endDate", dto.getEndDate());
         }
 
@@ -54,7 +54,7 @@ public class PaymentHistoryDao {
             SELECT 
                 ph.id, ph.amount, ph.customer_id, c.name as customer_name,
                 ph.type, ph.remarks, ph.is_received,
-                ph.created_at, ph.updated_at,
+                ph.created_at, ph.updated_at, ph.date,
                 u1.first_name as created_by_first_name, u1.last_name as created_by_last_name,
                 u2.first_name as updated_by_first_name, u2.last_name as updated_by_last_name
             FROM payment_history ph
@@ -75,12 +75,12 @@ public class PaymentHistoryDao {
         }
         
         if (dto.getStartDate() != null) {
-            sql.append(" AND ph.created_at >= :startDate");
+            sql.append(" AND ph.date >= :startDate");
             params.put("startDate", dto.getStartDate());
         }
         
         if (dto.getEndDate() != null) {
-            sql.append(" AND ph.created_at <= :endDate");
+            sql.append(" AND ph.date <= :endDate");
             params.put("endDate", dto.getEndDate());
         }
 
@@ -109,8 +109,9 @@ public class PaymentHistoryDao {
             paymentHistory.put("isReceived", row[6]);
             paymentHistory.put("createdAt", row[7]);
             paymentHistory.put("updatedAt", row[8]);
-            paymentHistory.put("createdByName", (row[9] != null ? row[9] : "") + " " + (row[10] != null ? row[10] : ""));
-            paymentHistory.put("updatedByName", (row[11] != null ? row[11] : "") + " " + (row[12] != null ? row[12] : ""));
+            paymentHistory.put("date", row[9]);
+            paymentHistory.put("createdByName", (row[10] != null ? row[10] : "") + " " + (row[11] != null ? row[11] : ""));
+            paymentHistory.put("updatedByName", (row[12] != null ? row[12] : "") + " " + (row[13] != null ? row[13] : ""));
             paymentHistories.add(paymentHistory);
         }
 
