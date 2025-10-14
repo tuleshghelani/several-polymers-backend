@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.OffsetDateTime;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Entity
