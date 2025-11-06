@@ -1,6 +1,7 @@
 package com.inventory.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.inventory.config.CustomDateDeserializer;
@@ -49,9 +50,14 @@ public class EmployeeDto {
     private Long createdById;
     
     // Search and pagination parameters
+    @JsonIgnore
     private String search;
+    @JsonIgnore
     private Integer page = 0;
+    @JsonIgnore
     private Integer size = 10;
+    @JsonIgnore
     private String sortBy = "id";
+    @JsonIgnore
     private String sortDir = "desc";
 } 

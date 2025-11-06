@@ -1,5 +1,6 @@
 package com.inventory.controller;
 
+import com.inventory.dto.AttendanceDto;
 import com.inventory.dto.request.AttendanceDeleteRequestDto;
 import com.inventory.dto.request.AttendancePdfRequestDto;
 import com.inventory.dto.request.AttendanceRequestDto;
@@ -56,5 +57,16 @@ public class AttendanceController {
             .build());
         
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+    
+    /**
+     * Get all attendance records with pagination and filters
+     * Filters: employeeId, startDate, endDate, shift, employeeName, employeeMobile
+     * Sorting: by id, startDateTime, endDateTime, employeeName, shift, totalPay, createdAt
+     * Default: ORDER BY id DESC
+     */
+    @PostMapping("/list")
+    public ResponseEntity<?> getAllAttendance(@RequestBody AttendanceDto request) {
+        return ResponseEntity.ok(attendanceService.getAllAttendance(request));
     }
 } 

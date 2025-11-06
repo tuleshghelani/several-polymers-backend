@@ -4,6 +4,7 @@ import com.inventory.dao.AttendanceDao;
 import com.inventory.dao.EmployeeDao;
 import com.inventory.dao.EmployeeWithdrawDao;
 import com.inventory.dto.ApiResponse;
+import com.inventory.dto.AttendanceDto;
 import com.inventory.dto.EmployeeWithdrawDto;
 import com.inventory.dto.request.AttendanceDeleteRequestDto;
 import com.inventory.dto.request.AttendancePdfRequestDto;
@@ -304,6 +305,57 @@ public class AttendanceService {
             );
         } catch (Exception e) {
             throw new ValidationException("Failed to generate payroll summary PDF: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get all attendance records with pagination and filters
+     * Supports filtering by employeeId, startDate, endDate, shift, employee name, mobile
+     * Optimized for performance with proper indexing and pagination
+     * Returns Map with content and pagination metadata
+     */
+    public ApiResponse<Map<String, Object>> getAllAttendance(AttendanceDto request) {
+        try {
+            // Validate pagination parameters
+            if (request.getPage() == null || request.getPage() < 0) {
+                request.setPage(0);
+            }
+            
+            if (request.getSize() == null || request.getSize() <= 0) {
+                request.setSize(10);
+            }
+            
+            // Limit max page size for performance
+            if (request.getSize() > 100) {
+                request.setSize(100);
+            }
+            
+            // Validate sort direction
+            if (request.getSortDir() == null || 
+                (!request.getSortDir().equalsIgnoreCase("asc") && !request.getSortDir().equalsIgnoreCase("desc"))) {
+                request.setSortDir("desc");
+            }
+            
+            // Validate date range
+            if (request.getStartDate() != null && request.getEndDate() != null) {
+                if (request.getEndDate().isBefore(request.getStartDate())) {
+                    throw new ValidationException("End date cannot be before start date");
+                }
+            }
+            
+            UserMaster currentUser = utilityService.getCurrentLoggedInUser();
+            Map<String, Object> result = attendanceDao.getAllAttendanceWithFilters(
+                currentUser.getClient().getId(),
+                request
+            );
+            
+            return ApiResponse.success("Attendance records retrieved successfully", result);
+        } catch (ValidationException e) {
+            logger.error("Validation error: ", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to fetch attendance records", e);
+            throw new ValidationException("Failed to fetch attendance records: " + e.getMessage());
         }
     }
 } 
