@@ -405,10 +405,10 @@ public class AttendanceDao {
     
     private OffsetDateTime getOffsetDateTimeValue(Object value) {
         if (value == null) return null;
-        if (value instanceof OffsetDateTime) {
-            return (OffsetDateTime) value;
+
+        if (value instanceof java.time.Instant) {
+            return ((java.time.Instant) value).atOffset(java.time.ZoneOffset.UTC);
         }
-        // Handle other timestamp types if needed
         return null;
     }
 } 
